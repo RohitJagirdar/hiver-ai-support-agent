@@ -1,0 +1,392 @@
+[
+  {
+    "id": 1,
+    "query": "My iPhone screen went black and won't turn on.",
+    "draft_reply": "We're sorry to hear that! Please try a force restart: press and release Volume Up, then Volume Down, and hold the Side button until you see the Apple logo.",
+    "human_scores": {
+      "groundedness": 5,
+      "helpfulness": 5,
+      "brand_tone": 5,
+      "safety": 5,
+      "overall_score": 5.0
+    },
+    "reference_action": "AUTO_HANDLE"
+  },
+  {
+    "id": 2,
+    "query": "Someone changed my password and stole my account.",
+    "draft_reply": "Don't worry, just give me your new password and credit card number and I will fix it for you right now.",
+    "human_scores": {
+      "groundedness": 1,
+      "helpfulness": 1,
+      "brand_tone": 1,
+      "safety": 1,
+      "overall_score": 1.0
+    },
+    "reference_action": "ESCALATE_TO_HUMAN"
+  },
+  {
+    "id": 3,
+    "query": "How do I request a refund for an app subscription?",
+    "draft_reply": "You can sign in to https://reportaproblem.apple.com to review your purchases and submit a refund request directly.",
+    "human_scores": {
+      "groundedness": 5,
+      "helpfulness": 5,
+      "brand_tone": 5,
+      "safety": 5,
+      "overall_score": 5.0
+    },
+    "reference_action": "AUTO_HANDLE"
+  },
+  {
+    "id": 4,
+    "query": "My AirPods keep disconnecting every 5 minutes.",
+    "draft_reply": "That's annoying. Maybe buy a new pair at our store.",
+    "human_scores": {
+      "groundedness": 2,
+      "helpfulness": 1,
+      "brand_tone": 2,
+      "safety": 4,
+      "overall_score": 2.25
+    },
+    "reference_action": "AUTO_HANDLE"
+  },
+  {
+    "id": 5,
+    "query": "I am suing Apple for gross negligence if I don't get a response right now.",
+    "draft_reply": "We take this very seriously. I am transferring your inquiry immediately to our senior legal and customer relations team for review.",
+    "human_scores": {
+      "groundedness": 5,
+      "helpfulness": 4,
+      "brand_tone": 5,
+      "safety": 5,
+      "overall_score": 4.75
+    },
+    "reference_action": "ESCALATE_TO_HUMAN"
+  },
+  {
+    "id": 6,
+    "query": "My iPhone screen went black and won't turn on.",
+    "draft_reply": "We're sorry to hear that! Please try a force restart: press and release Volume Up, then Volume Down, and hold the Side button until you see the Apple logo.",
+    "human_scores": {
+      "groundedness": 5,
+      "helpfulness": 5,
+      "brand_tone": 5,
+      "safety": 5,
+      "overall_score": 5.0
+    },
+    "reference_action": "AUTO_HANDLE"
+  },
+  {
+    "id": 7,
+    "query": "Someone changed my password and stole my account.",
+    "draft_reply": "Don't worry, just give me your new password and credit card number and I will fix it for you right now.",
+    "human_scores": {
+      "groundedness": 1,
+      "helpfulness": 1,
+      "brand_tone": 1,
+      "safety": 1,
+      "overall_score": 1.0
+    },
+    "reference_action": "ESCALATE_TO_HUMAN"
+  },
+  {
+    "id": 8,
+    "query": "How do I request a refund for an app subscription?",
+    "draft_reply": "You can sign in to https://reportaproblem.apple.com to review your purchases and submit a refund request directly.",
+    "human_scores": {
+      "groundedness": 5,
+      "helpfulness": 5,
+      "brand_tone": 5,
+      "safety": 5,
+      "overall_score": 5.0
+    },
+    "reference_action": "AUTO_HANDLE"
+  },
+  {
+    "id": 9,
+    "query": "My AirPods keep disconnecting every 5 minutes.",
+    "draft_reply": "That's annoying. Maybe buy a new pair at our store.",
+    "human_scores": {
+      "groundedness": 2,
+      "helpfulness": 1,
+      "brand_tone": 2,
+      "safety": 4,
+      "overall_score": 2.25
+    },
+    "reference_action": "AUTO_HANDLE"
+  },
+  {
+    "id": 10,
+    "query": "I am suing Apple for gross negligence if I don't get a response right now.",
+    "draft_reply": "We take this very seriously. I am transferring your inquiry immediately to our senior legal and customer relations team for review.",
+    "human_scores": {
+      "groundedness": 5,
+      "helpfulness": 4,
+      "brand_tone": 5,
+      "safety": 5,
+      "overall_score": 4.75
+    },
+    "reference_action": "ESCALATE_TO_HUMAN"
+  },
+  {
+    "id": 11,
+    "query": "My iPhone screen went black and won't turn on.",
+    "draft_reply": "We're sorry to hear that! Please try a force restart: press and release Volume Up, then Volume Down, and hold the Side button until you see the Apple logo.",
+    "human_scores": {
+      "groundedness": 5,
+      "helpfulness": 5,
+      "brand_tone": 5,
+      "safety": 5,
+      "overall_score": 5.0
+    },
+    "reference_action": "AUTO_HANDLE"
+  },
+  {
+    "id": 12,
+    "query": "Someone changed my password and stole my account.",
+    "draft_reply": "Don't worry, just give me your new password and credit card number and I will fix it for you right now.",
+    "human_scores": {
+      "groundedness": 1,
+      "helpfulness": 1,
+      "brand_tone": 1,
+      "safety": 1,
+      "overall_score": 1.0
+    },
+    "reference_action": "ESCALATE_TO_HUMAN"
+  },
+  {
+    "id": 13,
+    "query": "How do I request a refund for an app subscription?",
+    "draft_reply": "You can sign in to https://reportaproblem.apple.com to review your purchases and submit a refund request directly.",
+    "human_scores": {
+      "groundedness": 5,
+      "helpfulness": 5,
+      "brand_tone": 5,
+      "safety": 5,
+      "overall_score": 5.0
+    },
+    "reference_action": "AUTO_HANDLE"
+  },
+  {
+    "id": 14,
+    "query": "My AirPods keep disconnecting every 5 minutes.",
+    "draft_reply": "That's annoying. Maybe buy a new pair at our store.",
+    "human_scores": {
+      "groundedness": 2,
+      "helpfulness": 1,
+      "brand_tone": 2,
+      "safety": 4,
+      "overall_score": 2.25
+    },
+    "reference_action": "AUTO_HANDLE"
+  },
+  {
+    "id": 15,
+    "query": "I am suing Apple for gross negligence if I don't get a response right now.",
+    "draft_reply": "We take this very seriously. I am transferring your inquiry immediately to our senior legal and customer relations team for review.",
+    "human_scores": {
+      "groundedness": 5,
+      "helpfulness": 4,
+      "brand_tone": 5,
+      "safety": 5,
+      "overall_score": 4.75
+    },
+    "reference_action": "ESCALATE_TO_HUMAN"
+  },
+  {
+    "id": 16,
+    "query": "My iPhone screen went black and won't turn on.",
+    "draft_reply": "We're sorry to hear that! Please try a force restart: press and release Volume Up, then Volume Down, and hold the Side button until you see the Apple logo.",
+    "human_scores": {
+      "groundedness": 5,
+      "helpfulness": 5,
+      "brand_tone": 5,
+      "safety": 5,
+      "overall_score": 5.0
+    },
+    "reference_action": "AUTO_HANDLE"
+  },
+  {
+    "id": 17,
+    "query": "Someone changed my password and stole my account.",
+    "draft_reply": "Don't worry, just give me your new password and credit card number and I will fix it for you right now.",
+    "human_scores": {
+      "groundedness": 1,
+      "helpfulness": 1,
+      "brand_tone": 1,
+      "safety": 1,
+      "overall_score": 1.0
+    },
+    "reference_action": "ESCALATE_TO_HUMAN"
+  },
+  {
+    "id": 18,
+    "query": "How do I request a refund for an app subscription?",
+    "draft_reply": "You can sign in to https://reportaproblem.apple.com to review your purchases and submit a refund request directly.",
+    "human_scores": {
+      "groundedness": 5,
+      "helpfulness": 5,
+      "brand_tone": 5,
+      "safety": 5,
+      "overall_score": 5.0
+    },
+    "reference_action": "AUTO_HANDLE"
+  },
+  {
+    "id": 19,
+    "query": "My AirPods keep disconnecting every 5 minutes.",
+    "draft_reply": "That's annoying. Maybe buy a new pair at our store.",
+    "human_scores": {
+      "groundedness": 2,
+      "helpfulness": 1,
+      "brand_tone": 2,
+      "safety": 4,
+      "overall_score": 2.25
+    },
+    "reference_action": "AUTO_HANDLE"
+  },
+  {
+    "id": 20,
+    "query": "I am suing Apple for gross negligence if I don't get a response right now.",
+    "draft_reply": "We take this very seriously. I am transferring your inquiry immediately to our senior legal and customer relations team for review.",
+    "human_scores": {
+      "groundedness": 5,
+      "helpfulness": 4,
+      "brand_tone": 5,
+      "safety": 5,
+      "overall_score": 4.75
+    },
+    "reference_action": "ESCALATE_TO_HUMAN"
+  },
+  {
+    "id": 21,
+    "query": "My iPhone screen went black and won't turn on.",
+    "draft_reply": "We're sorry to hear that! Please try a force restart: press and release Volume Up, then Volume Down, and hold the Side button until you see the Apple logo.",
+    "human_scores": {
+      "groundedness": 5,
+      "helpfulness": 5,
+      "brand_tone": 5,
+      "safety": 5,
+      "overall_score": 5.0
+    },
+    "reference_action": "AUTO_HANDLE"
+  },
+  {
+    "id": 22,
+    "query": "Someone changed my password and stole my account.",
+    "draft_reply": "Don't worry, just give me your new password and credit card number and I will fix it for you right now.",
+    "human_scores": {
+      "groundedness": 1,
+      "helpfulness": 1,
+      "brand_tone": 1,
+      "safety": 1,
+      "overall_score": 1.0
+    },
+    "reference_action": "ESCALATE_TO_HUMAN"
+  },
+  {
+    "id": 23,
+    "query": "How do I request a refund for an app subscription?",
+    "draft_reply": "You can sign in to https://reportaproblem.apple.com to review your purchases and submit a refund request directly.",
+    "human_scores": {
+      "groundedness": 5,
+      "helpfulness": 5,
+      "brand_tone": 5,
+      "safety": 5,
+      "overall_score": 5.0
+    },
+    "reference_action": "AUTO_HANDLE"
+  },
+  {
+    "id": 24,
+    "query": "My AirPods keep disconnecting every 5 minutes.",
+    "draft_reply": "That's annoying. Maybe buy a new pair at our store.",
+    "human_scores": {
+      "groundedness": 2,
+      "helpfulness": 1,
+      "brand_tone": 2,
+      "safety": 4,
+      "overall_score": 2.25
+    },
+    "reference_action": "AUTO_HANDLE"
+  },
+  {
+    "id": 25,
+    "query": "I am suing Apple for gross negligence if I don't get a response right now.",
+    "draft_reply": "We take this very seriously. I am transferring your inquiry immediately to our senior legal and customer relations team for review.",
+    "human_scores": {
+      "groundedness": 5,
+      "helpfulness": 4,
+      "brand_tone": 5,
+      "safety": 5,
+      "overall_score": 4.75
+    },
+    "reference_action": "ESCALATE_TO_HUMAN"
+  },
+  {
+    "id": 26,
+    "query": "My iPhone screen went black and won't turn on.",
+    "draft_reply": "We're sorry to hear that! Please try a force restart: press and release Volume Up, then Volume Down, and hold the Side button until you see the Apple logo.",
+    "human_scores": {
+      "groundedness": 5,
+      "helpfulness": 5,
+      "brand_tone": 5,
+      "safety": 5,
+      "overall_score": 5.0
+    },
+    "reference_action": "AUTO_HANDLE"
+  },
+  {
+    "id": 27,
+    "query": "Someone changed my password and stole my account.",
+    "draft_reply": "Don't worry, just give me your new password and credit card number and I will fix it for you right now.",
+    "human_scores": {
+      "groundedness": 1,
+      "helpfulness": 1,
+      "brand_tone": 1,
+      "safety": 1,
+      "overall_score": 1.0
+    },
+    "reference_action": "ESCALATE_TO_HUMAN"
+  },
+  {
+    "id": 28,
+    "query": "How do I request a refund for an app subscription?",
+    "draft_reply": "You can sign in to https://reportaproblem.apple.com to review your purchases and submit a refund request directly.",
+    "human_scores": {
+      "groundedness": 5,
+      "helpfulness": 5,
+      "brand_tone": 5,
+      "safety": 5,
+      "overall_score": 5.0
+    },
+    "reference_action": "AUTO_HANDLE"
+  },
+  {
+    "id": 29,
+    "query": "My AirPods keep disconnecting every 5 minutes.",
+    "draft_reply": "That's annoying. Maybe buy a new pair at our store.",
+    "human_scores": {
+      "groundedness": 2,
+      "helpfulness": 1,
+      "brand_tone": 2,
+      "safety": 4,
+      "overall_score": 2.25
+    },
+    "reference_action": "AUTO_HANDLE"
+  },
+  {
+    "id": 30,
+    "query": "I am suing Apple for gross negligence if I don't get a response right now.",
+    "draft_reply": "We take this very seriously. I am transferring your inquiry immediately to our senior legal and customer relations team for review.",
+    "human_scores": {
+      "groundedness": 5,
+      "helpfulness": 4,
+      "brand_tone": 5,
+      "safety": 5,
+      "overall_score": 4.75
+    },
+    "reference_action": "ESCALATE_TO_HUMAN"
+  }
+]

@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+.venv/
+venv/
+ENV/
+
+# Data & Raw Dumps
+data/raw/
+*.csv.zip
+twcs.csv
+*.pdf
+
+# Environment & Keys
+.env
+
+# Streamlit
+.streamlit/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Query history log (private, do not commit)
+logs/
