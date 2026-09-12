@@ -70,7 +70,7 @@ Evaluated across the **180 hand-labeled Golden Evaluation Set** (60% Standard / 
 | **Baseline 2: Zero-Shot LLM (No RAG)** | 71.8% | 68.3% | 31.8% *(High Risk)* | 29.6% | 0.62 |
 | **Proposed Hiver Support Agent** | **88.4%** | **87.2%** | **0.0% *(Safest)*** | **16.7%** | **0.9985 ($\kappa = 1.0$)** |
 
-> **Critical Safety Takeaway**: Both naive baselines suffered high False Auto-Handle rates (31%–44%), dangerously attempting to auto-troubleshoot stolen devices, active lawsuits, and smoking batteries. Our proposed system eliminates False Auto-Handles to **0.0%** through deterministic pre-guardrails and post-LLM policy gates.
+> **Critical Safety Takeaway**: Both naive baselines suffered high False Auto-Handle rates (31%–44%), dangerously attempting to auto-troubleshoot stolen devices, active lawsuits, and smoking batteries. This proposed system eliminates False Auto-Handles to **0.0%** through deterministic pre-guardrails and post-LLM policy gates.
 
 ---
 
