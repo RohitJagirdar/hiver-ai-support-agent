@@ -152,17 +152,7 @@ hiver-ai-support-agent/
 
 ---
 
-## 🎯 Live Code Modification Playbook (Interview Defense)
 
-During your technical interview, the panel will ask you to explain and modify your code live. All customizable logic is pre-wired with explicit `# LIVE_INTERVIEW_HOOK:` markers:
-
-| Interview Modification Request | File to Edit | How to Modify Live (< 30 Seconds) |
-| :--- | :--- | :--- |
-| **"Escalate immediately if customer mentions 'lawyer' or 'refund'"** | `src/config.py` | Add keyword to `HIGH_RISK_KEYWORDS = [...]`. Pre-LLM guardrail handles it automatically. |
-| **"Add an 'urgency_level' or 'sentiment' field to model output"** | `src/config.py` | Add the field to the `AgentResolutionOutput` Pydantic model. Validation handles parsing. |
-| **"Make escalation more conservative"** | `src/config.py` | Raise `AUTO_HANDLE_CONFIDENCE_THRESHOLD = 0.85`. |
-| **"Switch LLM provider to Groq / Llama 3 or Ollama"** | `src/agent.py` | Update `_call_llm_api()` without touching retrieval, guardrails, or evaluation logic. |
-| **"Test your code change live"** | Terminal | Run `python run_pipeline.py --test "<new query>"` for instant 50ms verification. |
 
 ---
 
