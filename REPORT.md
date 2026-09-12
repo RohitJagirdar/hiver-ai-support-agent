@@ -16,17 +16,17 @@ In this context, **"Good"** is defined by three strict non-negotiables:
 2. **Asymmetric Risk Management**: It is vastly better to escalate a routine query to a human agent than to auto-handle an active account breach, legal dispute, or physical battery safety hazard.
 3. **Public Privacy Protection (PII Sanitization)**: Angry customers frequently tweet sensitive credentials, credit card numbers, and phone numbers in public threads. A good agent must detect and redact this data immediately, warn the customer to delete the public tweet, and transition the conversation to private Direct Messages.
 
-### What We Intentionally Chose NOT to Build
+### What Was Intentionally Chosen NOT to Build
 To deliver a robust, highly reliable, and reproducible system within the assignment scope, the following capabilities were deliberately excluded:
 - **Direct Database / CRM Write Actions**: The agent drafts replies and routes tickets; it does *not* autonomously issue financial refunds or modify Apple IDs without human authorization.
-- **Autonomous Multi-Turn Twitter DM Bot**: We focused on first-turn tweet triage and public troubleshooting rather than unbounded multi-turn conversation loops, which dramatically increase state complexity and jailbreak susceptibility.
-- **Complex Cloud Vector Databases**: We chose local NumPy BLAS-accelerated vector search over managed cloud vector stores (Pinecone/Milvus) to ensure 100% offline reproducibility, zero cost, and zero external failure modes.
+- **Autonomous Multi-Turn Twitter DM Bot**: Focused on first-turn tweet triage and public troubleshooting rather than unbounded multi-turn conversation loops, which dramatically increase state complexity and jailbreak susceptibility.
+- **Complex Cloud Vector Databases**:  Chose local NumPy BLAS-accelerated vector search over managed cloud vector stores (Pinecone/Milvus) to ensure 100% offline reproducibility, zero cost, and zero external failure modes.
 
 ---
 
 ## 2. Benchmark Results vs. Baselines
 
-We evaluated our proposed system against two distinct baselines across the 180-sample Golden Evaluation Set:
+Evaluated the proposed system against two distinct baselines across the 180-sample Golden Evaluation Set:
 1. **Baseline 1 (Trivial Baseline)**: Regex keyword-matching classifier + canned static reply templates + basic length-based escalation.
 2. **Baseline 2 (Simple Baseline)**: Zero-shot generic LLM without RAG retrieval context and without confidence calibration.
 3. **Proposed System (Hiver Support Agent)**: Pre-guardrails + Hybrid Vector/Keyword RAG + Gemini Flash Structured Generator + Post-LLM Confidence & Safety Arbiter.
@@ -40,14 +40,14 @@ We evaluated our proposed system against two distinct baselines across the 180-s
 | **Proposed Hiver Support Agent** | **88.4%** | **87.2%** | **0.0% *(Safest)*** | **16.7%** | **0.9985 ($\kappa = 1.0$)** |
 
 ### Key Observations:
-- **The Safety Breakthrough**: Baseline 1 and Baseline 2 suffered from dangerous **False Auto-Handle Rates (44.4% and 31.8%)**, erroneously attempting to auto-troubleshoot compromised Apple IDs, lawsuit threats, and swollen batteries. Our proposed system eliminated False Auto-Handles down to **0.0%** via deterministic pre-guardrails and post-LLM policy gates.
+- **The Safety Breakthrough**: Baseline 1 and Baseline 2 suffered from dangerous **False Auto-Handle Rates (44.4% and 31.8%)**, erroneously attempting to auto-troubleshoot compromised Apple IDs, lawsuit threats, and swollen batteries. This proposed system eliminated False Auto-Handles down to **0.0%** via deterministic pre-guardrails and post-LLM policy gates.
 - **Intent Disambiguation**: Macro-F1 jumped from 41.2% (Baseline 1) to 88.4% (Proposed Agent), driven by hybrid semantic search that disambiguates nuanced customer slang from genuine technical symptoms.
 
 ---
 
 ## 3. Failure Analysis: Top 5 Real Failure Modes
 
-Through rigorous qualitative auditing of the Golden Set evaluation runs, we identified the following top 5 failure modes:
+Through rigorous qualitative auditing of the Golden Set evaluation runs, the following top 5 failure modes were identified:
 
 ```
 +-----------------------------------------------------------------------------------------------+
@@ -92,24 +92,24 @@ Through rigorous qualitative auditing of the Golden Set evaluation runs, we iden
 
 ## 4. "What is Misleading About My Headline Number?" (Mandatory Section)
 
-Our headline benchmark reports **88.4% Intent Macro-F1** and **0.0% False Auto-Handle Rate**. While these numbers demonstrate strong engineering rigor, presenting them without critique would be intellectually dishonest.
+The headline benchmark reports **88.4% Intent Macro-F1** and **0.0% False Auto-Handle Rate**. While these numbers demonstrate strong engineering rigor, presenting them without critique would be intellectually dishonest.
 
 Here is what is misleading about these numbers in production:
 
 1. **The Synthetic RAG Knowledge Base Distribution Bias**:
-   - Our vector index was built from 1,998 curated conversation pairs where Apple Support *already provided a successful, high-signal answer*. In reality, live incoming Twitter queries are far messier: 30% are unintelligible gibberish, spam links, or animated GIFs. Our offline benchmark tests queries against a clean historical distribution that over-indexes on resolvable issues.
+   - The vector index was built from 1,998 curated conversation pairs where Apple Support *already provided a successful, high-signal answer*. In reality, live incoming Twitter queries are far messier: 30% are unintelligible gibberish, spam links, or animated GIFs. The offline benchmark tests queries against a clean historical distribution that over-indexes on resolvable issues.
 2. **The "Zero False Auto-Handle" Paradox (Conservative Over-Escalation)**:
-   - Achieving a 0.0% False Auto-Handle rate was achieved by enforcing conservative deterministic guardrails. In a business context, this means our **False Escalation Rate is 16.7%**—meaning 1 out of every 6 customers who could have been resolved instantly by AI is routed to a human queue, driving up customer support staffing costs.
+   - Achieving a 0.0% False Auto-Handle rate was achieved by enforcing conservative deterministic guardrails. In a business context, this means the **False Escalation Rate is 16.7%**—meaning 1 out of every 6 customers who could have been resolved instantly by AI is routed to a human queue, driving up customer support staffing costs.
 3. **LLM-as-a-Judge Echo Chamber Effect**:
-   - Both the agent and the judge utilize Gemini models. LLMs have known stylistic biases towards outputs generated by models of the same family (favoring polite, structured responses). While our 30-sample human calibration showed strong agreement ($\kappa = 1.0$), real customer satisfaction (CSAT) can only be measured by whether the customer's phone actually started working.
+   - Both the agent and the judge utilize Gemini models. LLMs have known stylistic biases towards outputs generated by models of the same family (favoring polite, structured responses). While the 30-sample human calibration showed strong agreement ($\kappa = 1.0$), real customer satisfaction (CSAT) can only be measured by whether the customer's phone actually started working.
 4. **Offline Static Queries vs. Multi-Turn Customer Backlash**:
-   - Evaluating static single-turn responses does not capture how customers react when an auto-generated tweet fails. If a customer follows our force-restart instructions and their phone remains broken, their anger triples in the second turn. Offline benchmarks cannot measure multi-turn deflection success.
+   - Evaluating static single-turn responses does not capture how customers react when an auto-generated tweet fails. If a customer follows the force-restart instructions and their phone remains broken, their anger triples in the second turn. Offline benchmarks cannot measure multi-turn deflection success.
 
 ---
 
-## 5. What We'd Do Next with One More Week
+## 5. What would be done with One More Week
 
-If given one additional week of development, we would prioritize the following roadmap:
+If given one additional week of development, the following roadmap could be considered:
 
 1. **Hybrid Cross-Encoder Re-Ranking & Model Disambiguation**:
    - Implement a lightweight cross-encoder (`ms-marco-MiniLM-L-6-v2`) to re-rank candidate historical resolutions and explicitly prompt the customer for their device generation (e.g., *"Which iPhone model are you using?"*) before providing model-specific hardware advice.
