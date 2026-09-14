@@ -479,9 +479,17 @@ with st.sidebar:
 
     # Engine Telemetry
     st.markdown('<div class="section-label">Engine Specification</div>', unsafe_allow_html=True)
+
+    if agent.mock_mode:
+        provider_label = f"Mock heuristic (no API key)"
+        provider_color = "#f59e0b"
+    else:
+        provider_label = f"Gemini / {agent.model_name}"
+        provider_color = "#10b981"
+
     st.markdown(
         f'<div style="font-size:0.8rem;color:{text_muted};line-height:1.8;">'
-        f'• Model: <strong style="color:{text_sub};">gemini-2.5-flash / mock</strong><br>'
+        f'• Model: <strong style="color:{provider_color};">{provider_label}</strong><br>'
         f'• Vector Retrieval: <strong style="color:{text_sub};">NumPy Cosine (all-MiniLM)</strong><br>'
         f'• Knowledge Base: <strong style="color:{text_sub};">1,998 Verified Pairs</strong><br>'
         f'• Safe Auto-Handle Cutoff: <strong style="color:{text_sub};">≥ 70% Confidence</strong><br>'
@@ -489,6 +497,14 @@ with st.sidebar:
         f'</div>',
         unsafe_allow_html=True
     )
+
+    if agent.mock_mode:
+        st.markdown(
+            f'<div style="margin-top:0.7rem;padding:0.5rem 0.75rem;background:rgba(245,158,11,0.12);'
+            f'border:1px solid rgba(245,158,11,0.3);border-radius:8px;font-size:0.78rem;color:#f59e0b;">'
+            f'No API key detected. Add <code>GEMINI_API_KEY</code> to a <code>.env</code> file in the project root.</div>',
+            unsafe_allow_html=True
+        )
 
 # ─────────────────────────────────────────────────────────────────────────────
 # MAIN CONTENT HEADER
@@ -728,7 +744,7 @@ else:
     pipeline_cards = [
         (col_l1, "Layer 1: Pre-Guardrails", "Deterministic Interception", "Zero-cost filtering of prompt injections, public PII, and legal threats."),
         (col_l2, "Layer 2: Grounded RAG", "Local Vector Search", "NumPy cosine similarity across 1,998 verified @AppleSupport resolution pairs."),
-        (col_l3, "Layer 3: Structured LLM", "JSON Synthesis", "Gemini 2.5 Flash / Mock strictly constrained to Pydantic typing schema."),
+        (col_l3, "Layer 3: Structured LLM", "JSON Synthesis", "Gemini 3.6 Flash / Mock strictly constrained to Pydantic typing schema."),
         (col_l4, "Layer 4: Policy Arbiter", "Safety & Risk Gate", "Enforces 70% confidence threshold and mandatory account safety escalations."),
     ]
 

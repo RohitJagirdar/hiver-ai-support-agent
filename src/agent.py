@@ -106,19 +106,26 @@ class HiverSupportAgent:
         self,
         retriever: Optional[VectorStore] = None,
         api_key: Optional[str] = None,
-        model_name: str = "gemini-2.5-flash",
+        model_name: str = "gemini-3.6-flash",
         mock_mode: bool = False
     ):
-        self.api_key = api_key or os.getenv("GEMINI_API_KEY", "")
-        self.model_name = model_name
+        self.api_key = (api_key or os.getenv("GEMINI_API_KEY", "")).strip()
+        self.model_name = os.getenv("DEFAULT_MODEL", model_name)
+        self.provider = "gemini" if self.api_key else "mock"
         self.mock_mode = mock_mode or not bool(self.api_key)
         self.retriever = retriever
+
+        if self.mock_mode:
+            logger.warning("No GEMINI_API_KEY found in .env — running in mock mode.")
+        else:
+            logger.info(f"LLM provider: Gemini ({self.model_name})")
 
         if self.retriever is None:
             csv_path = "data/processed/applesupport_pairs.csv"
             emb_path = "data/processed/embeddings_cache.npy"
             if os.path.exists(csv_path) and os.path.exists(emb_path):
                 self.retriever = load_retriever_from_disk(csv_path, emb_path)
+
 
     # =========================================================================
     # LAYER 1: PRE-LLM DETERMINISTIC GUARDRAILS
@@ -237,12 +244,15 @@ class HiverSupportAgent:
     # =========================================================================
     def _call_llm_api(self, prompt: str, system_prompt: str) -> str:
         """
-        LIVE_INTERVIEW_HOOK: Swap LLM provider here (e.g. Gemini, Groq, Ollama, OpenAI).
+        LIVE_INTERVIEW_HOOK: Swap LLM provider here (e.g. Gemini, Ollama, OpenAI).
+        Set GEMINI_API_KEY in .env to enable live LLM; otherwise falls back to mock heuristics.
         """
         if self.mock_mode:
             return self._mock_llm_response(prompt)
 
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent?key={self.api_key}"
+        headers = {"Content-Type": "application/json"}
+
         payload = {
             "contents": [{"parts": [{"text": prompt}]}],
             "systemInstruction": {"parts": [{"text": system_prompt}]},
@@ -251,17 +261,15 @@ class HiverSupportAgent:
                 "temperature": 0.2
             }
         }
-        headers = {"Content-Type": "application/json"}
-
         try:
-            resp = requests.post(url, json=payload, headers=headers, timeout=12)
+            resp = requests.post(url, json=payload, headers=headers, timeout=15)
             resp.raise_for_status()
             data = resp.json()
-            raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
-            return raw_text
+            return data["candidates"][0]["content"]["parts"][0]["text"]
         except Exception as e:
-            logger.warning(f"LLM API call failed ({e}). Falling back to local heuristic response.")
+            logger.warning(f"Gemini API call failed ({e}). Falling back to local heuristic response.")
             return self._mock_llm_response(prompt)
+
 
     def _mock_llm_response(self, prompt: str) -> str:
         """
@@ -490,7 +498,15 @@ class HiverSupportAgent:
 Historical Apple Precedents for Grounding:
 {context_str}
 
-Analyze the customer's query, classify intent, review historical precedents, and produce the structured JSON output."""
+Analyze the customer's query, classify intent, review historical precedents, and produce a JSON object with EXACTLY these keys:
+{{
+  "predicted_intent": "ACCOUNT_SECURITY" | "HARDWARE_ISSUES" | "SOFTWARE_UPDATE" | "BILLING_SUBSCRIPTIONS" | "DEVICE_SETUP_SYNC" | "GENERAL_OTHER",
+  "confidence_score": 0.0 to 1.0,
+  "action": "AUTO_HANDLE" | "ESCALATE_TO_HUMAN",
+  "escalation_reason": "string",
+  "draft_reply": "string",
+  "urgency_level": "LOW" | "MEDIUM" | "HIGH"
+}}"""
 
         # Step 4: LLM Generation
         raw_json_str = self._call_llm_api(prompt=user_prompt, system_prompt=AGENT_SYSTEM_PROMPT)
@@ -498,9 +514,27 @@ Analyze the customer's query, classify intent, review historical precedents, and
         # Step 5: JSON Schema Parsing & Validation
         try:
             # Clean possible markdown wrapping (```json ... ```)
-            cleaned_json = re.sub(r"^```json\s*", "", raw_json_str.strip())
+            cleaned_json = re.sub(r"^```(?:json)?\s*", "", raw_json_str.strip())
             cleaned_json = re.sub(r"\s*```$", "", cleaned_json)
             parsed_dict = json.loads(cleaned_json)
+
+            # Normalize common key aliases from LLM
+            key_aliases = {
+                "intent": "predicted_intent",
+                "category": "predicted_intent",
+                "confidence": "confidence_score",
+                "score": "confidence_score",
+                "decision": "action",
+                "reason": "escalation_reason",
+                "justification": "escalation_reason",
+                "reply": "draft_reply",
+                "response": "draft_reply",
+                "urgency": "urgency_level",
+            }
+            for alias, canonical in key_aliases.items():
+                if alias in parsed_dict and canonical not in parsed_dict:
+                    parsed_dict[canonical] = parsed_dict[alias]
+
             parsed_dict["retrieved_reference_ids"] = ref_ids
             output = AgentResolutionOutput(**parsed_dict)
         except Exception as e:
