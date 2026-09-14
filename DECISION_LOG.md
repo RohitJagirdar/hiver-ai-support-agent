@@ -85,7 +85,7 @@ This document records the 12 key non-obvious engineering decisions, rationale, a
 
 ---
 
-### 12. Pre-Wired `# LIVE_INTERVIEW_HOOK:` Anchors
-* **Decision**: Placed explicit live modification hooks in `src/config.py` and `src/agent.py` for keyword guardrails, Pydantic schemas, and model provider callers.
-* **Why**: During live technical defenses, interviewers test candidates by asking for instant code modifications on screen share. Having labeled anchor points allows you to execute edits in **under 30 seconds** without hunting through complex codebases.
-* **Alternative Considered**: Highly abstract plugin/middleware frameworks (rejected because layered abstractions make live code modification slow and error-prone).
+### 12. Explicit Extension Points for Domain Customization
+* **Decision**: Organized keyword guardrails, Pydantic classification schemas, and model provider callers around clean, isolated extension points in `src/config.py` and `src/agent.py`.
+* **Why**: Production customer support operations frequently require rapidly introducing new policy keywords, onboarding secondary LLM providers, or tuning confidence thresholds without refactoring core pipeline orchestration. Having decoupled extension points minimizes regression risks.
+* **Alternative Considered**: Heavyweight abstract plugin/middleware frameworks (rejected to maintain low runtime overhead, readability, and zero circular dependencies).

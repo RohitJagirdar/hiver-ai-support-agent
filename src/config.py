@@ -1,6 +1,6 @@
 """
 Centralized Configuration, Schemas, Guardrails, and Prompts.
-Designed with explicit Live Interview Defense Hooks for rapid live modification.
+Configurable parameters, policy thresholds, and domain guardrails for the agent pipeline.
 """
 
 from enum import Enum
@@ -30,8 +30,8 @@ class ActionDecision(str, Enum):
 # 2. PYDANTIC SCHEMAS
 # ============================================================================
 
-# LIVE_INTERVIEW_HOOK: If interviewer asks to add a new field (e.g. UrgencyLevel, Sentiment),
-# add the Enum and field here in under 30 seconds.
+# EXTENSION_POINT: To add new classification fields (e.g. UrgencyLevel, Sentiment),
+# add the Enum and field to the Pydantic schema below.
 class UrgencyLevel(str, Enum):
     LOW = "LOW"
     MEDIUM = "MEDIUM"
@@ -75,7 +75,7 @@ class AgentResolutionOutput(BaseModel):
 # 3. DETERMINISTIC GUARDRAILS (PRE-LLM & POST-LLM)
 # ============================================================================
 
-# LIVE_INTERVIEW_HOOK: Modify or add high-risk keywords to immediately force escalation.
+# EXTENSION_POINT: Modify or add high-risk keywords to immediately force escalation.
 HIGH_RISK_KEYWORDS = [
     "lawyer", "attorney", "sue", "suing", "court", "legal action",
     "stolen", "hacked", "unauthorized charge", "chargeback", "fraud",
@@ -85,7 +85,7 @@ HIGH_RISK_KEYWORDS = [
 ]
 
 # Minimum confidence required to auto-handle
-# LIVE_INTERVIEW_HOOK: Adjust confidence threshold (e.g., raise to 0.85 for conservative auto-handling)
+# CONFIG_HOOK: Adjust confidence threshold (e.g., raise to 0.85 for conservative auto-handling)
 AUTO_HANDLE_CONFIDENCE_THRESHOLD = 0.70
 
 # Intents that must ALWAYS be escalated to human agents for safety/PII reasons

@@ -5,7 +5,6 @@ Implements the 4-layer autonomous workflow:
 2. Intent-Aware Context Retrieval (RAG)
 3. Structured LLM Generation
 4. Post-LLM Policy & Confidence Arbiter
-Contains explicit LIVE_INTERVIEW_HOOK markers for live interview modifications.
 """
 
 import os
@@ -156,7 +155,7 @@ class HiverSupportAgent:
 
     def _pre_llm_guardrails(self, query: str) -> Optional[AgentResolutionOutput]:
         """
-        LIVE_INTERVIEW_HOOK: Modify keyword guardrails or escalation triggers here.
+        Pre-LLM Safety and Domain Guardrail Filter.
         If an input contains high-risk terms (lawyer, sue, stolen, hacked), PII leaks,
         or prompt injections, short-circuit immediately to save latency, eliminate LLM cost,
         and prevent liability.
@@ -216,8 +215,7 @@ class HiverSupportAgent:
                 )
 
         # 4. Domain Relevance Gate — reject non-Apple queries before any LLM/RAG work
-        # LIVE_INTERVIEW_HOOK: Extend _APPLE_DOMAIN_TERMS or swap with a fast embedding
-        # classifier if the domain vocabulary grows significantly.
+        # Extend _APPLE_DOMAIN_TERMS or swap with a classifier if the domain vocabulary grows significantly.
         if not self._is_apple_domain(query):
             return AgentResolutionOutput(
                 predicted_intent=IntentCategory.GENERAL_OTHER,
@@ -244,7 +242,7 @@ class HiverSupportAgent:
     # =========================================================================
     def _call_llm_api(self, prompt: str, system_prompt: str) -> str:
         """
-        LIVE_INTERVIEW_HOOK: Swap LLM provider here (e.g. Gemini, Ollama, OpenAI).
+        Decoupled LLM Provider Interface.
         Set GEMINI_API_KEY in .env to enable live LLM; otherwise falls back to mock heuristics.
         """
         if self.mock_mode:
@@ -450,7 +448,7 @@ class HiverSupportAgent:
                 output.escalation_reason = f"Security Policy: Mandatory human escalation for {output.predicted_intent.value}"
 
         # Rule 2: Low Confidence Threshold
-        # LIVE_INTERVIEW_HOOK: Change confidence cutoff logic here
+        # Enforce minimum confidence cutoff before allowing automated resolution
         if output.confidence_score < AUTO_HANDLE_CONFIDENCE_THRESHOLD:
             if output.action != ActionDecision.ESCALATE_TO_HUMAN:
                 output.action = ActionDecision.ESCALATE_TO_HUMAN

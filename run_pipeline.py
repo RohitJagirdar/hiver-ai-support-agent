@@ -1,6 +1,6 @@
 """
 Top-Level Reproducibility Runner and CLI Interface for Hiver AI Support Agent.
-Enables instant reproduction (< 1 minute), live interview defense testing, and full comparative evaluation.
+Enables instant reproduction (< 1 minute), interactive single-query testing, and full comparative evaluation.
 """
 
 import os
@@ -168,7 +168,7 @@ def main():
     parser.add_argument("--mode", choices=["quick", "full"], default="quick",
                         help="Benchmark evaluation mode: 'quick' (20 samples, ~15s) or 'full' (180 samples)")
     parser.add_argument("--test", type=str, default=None,
-                        help="Live interview test mode: evaluate a single tweet string instantly")
+                        help="Interactive single-query evaluation mode: evaluate a single tweet string instantly")
     parser.add_argument("--calibrate", action="store_true",
                         help="Run LLM-as-a-Judge human correlation study")
     parser.add_argument("--mock", action="store_true",

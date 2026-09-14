@@ -41,7 +41,7 @@ python run_pipeline.py --mode full
 python run_pipeline.py --calibrate
 ```
 
-### 3. Live Single-Query Interview Testing
+### 3. Interactive Single-Query Testing
 ```bash
 # Test 1: Standard Hardware Issue (Auto-Handled with force-restart instructions)
 python run_pipeline.py --test "My iPhone 14 screen suddenly went black and won't turn on"
@@ -133,7 +133,7 @@ hiver-ai-support-agent/
 │   └── calibration_sample.json    # 30 paired Human-vs-Judge test items
 │
 ├── src/
-│   ├── config.py                  # Schemas, prompts, guardrails, and LIVE_INTERVIEW_HOOKs
+│   ├── config.py                  # Schemas, prompts, guardrails, and extension points
 │   ├── security.py                # PII regex sanitization & prompt injection interceptor
 │   ├── retriever.py               # VectorStore (NumPy cosine similarity + FAISS bridge)
 │   ├── agent.py                   # Core 4-layer autonomous HiverSupportAgent

@@ -3,7 +3,7 @@ Streamlit Interactive Dashboard for Hiver AI Support Agent.
 Target Brand: @AppleSupport (Twitter Customer Support)
 Features:
 - Day & Night Mode theme toggle with high contrast across all elements
-- One-click scenario chips for rapid interview stress-testing
+- One-click scenario chips for rapid adversarial and edge-case stress-testing
 - Authentic, clean Twitter / X conversation thread output (zero HTML leaks, zero emojis)
 - Explainable triage metrics, handling rationale, and grounded RAG precedents
 """
