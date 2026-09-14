@@ -99,7 +99,7 @@ Evaluated across the **180 hand-labeled Golden Evaluation Set** (60% Standard / 
                                                ▼
                               ┌──────────────────────────────────┐
                               │  Structured LLM Decision Engine  │
-                              │    (Gemini 2.5 Flash / Mock)     │
+                              │    (Gemini 3.6 Flash / Mock)     │
                               └────────────────┬─────────────────┘
                                                │ Structured Output
                                                ▼
