@@ -20,7 +20,7 @@ This document records the 12 key non-obvious engineering decisions, rationale, a
 
 ### 3. Pure NumPy Normalized Cosine Engine with FAISS Bridge
 * **Decision**: Defaulted to BLAS-accelerated NumPy matrix multiplication (`query_vector @ embeddings.T`) for vector similarity while providing a drop-in FAISS bridge if installed.
-* **Why**: Our curated historical knowledge base contains 1,998 vectors of dimension 384 (`all-MiniLM-L6-v2`), requiring only ~3 MB of RAM. At this scale, an exact NumPy dot product plus sort takes **under 0.1 ms** per query, has no approximation error, and avoids binary C++ build failures on reviewer environments (especially Windows/Python 3.12+).
+* **Why**: Our curated historical knowledge base contains 1,998 vectors of dimension 384 (`all-MiniLM-L6-v2`), requiring only ~3 MB of RAM. At this scale, an exact NumPy dot product plus sort takes **under 0.1 ms** per query, has no approximation error, and avoids binary C++ build failures on other machines (especially Windows/Python 3.12+).
 * **Alternative Considered**: Pinecone / ChromaDB / Weaviate (rejected due to cloud dependencies, network latency overhead, and API keys).
 
 ---
@@ -66,7 +66,7 @@ This document records the 12 key non-obvious engineering decisions, rationale, a
 
 ### 9. Resilient Zero-API-Key Offline Mock Mode (`--mock`)
 * **Decision**: When `GEMINI_API_KEY` is missing (or `--mock` is passed), the LLM is replaced by a deterministic keyword-rule stub. The stub ignores retrieved context on purpose, so keywords in precedents can't leak into its intent decision.
-* **Why**: Reviewers often clone a repository and run `python run_pipeline.py` immediately. If that crashes with `KeyError: 'GEMINI_API_KEY'`, they can't check anything else.
+* **Why**: People often clone a repository and run `python run_pipeline.py` straight away. If that crashes with `KeyError: 'GEMINI_API_KEY'`, they can't check anything else.
 * **Trade-off**: mock numbers measure the rules, not a model. Every run prints which mode produced it, and live API failures that fall back to the mock are counted, so mock results can't be mistaken for live ones.
 * **Alternative Considered**: Requiring an API key before running anything (rejected because it blocks anyone without a key from checking that the pipeline works).
 

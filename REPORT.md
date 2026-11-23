@@ -1,4 +1,4 @@
-# Hiver Take-Home: AI Support Agent for @AppleSupport
+# AI Support Agent for @AppleSupport
 
 **Evaluation report**
 
@@ -99,7 +99,7 @@ What the evidence supports: the layered design catches the risks it was explicit
 
 ---
 
-## 5. With one more week
+## 5. Next steps
 
 In priority order. The first two make every later number trustworthy.
 

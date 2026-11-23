@@ -22,7 +22,7 @@ from src.evaluator import EvaluationHarness
 
 def print_banner():
     print("=" * 80)
-    print("      HIVER SDE INTERN TAKE-HOME: AI SUPPORT AGENT EVALUATION PIPELINE      ")
+    print("              HIVER AI SUPPORT AGENT: EVALUATION PIPELINE                       ")
     print("               Target Brand: @AppleSupport (Twitter Support)                ")
     print("=" * 80)
 

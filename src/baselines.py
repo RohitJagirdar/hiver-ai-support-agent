@@ -1,6 +1,6 @@
 """
 Baselines Module for Comparative Evaluation.
-Implements the required baselines per the Hiver assignment specification:
+Implements the two comparison baselines:
 1. Baseline 1 (Trivial Baseline): Regex keyword matching + Canned static reply templates + Naive sentiment escalation.
 2. Baseline 2 (Simple Baseline): Zero-shot generic LLM without RAG retrieval context and without confidence calibration.
 """
