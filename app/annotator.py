@@ -1,6 +1,6 @@
 """
 Streamlit Annotator & Golden Set Inspector.
-Allows rapid review, verification, and inspection of the 180-sample hand-labeled Golden Set.
+Allows rapid review, verification, and inspection of the hand-labeled Golden Set (21 unique queries).
 """
 
 import os
@@ -16,7 +16,7 @@ st.set_page_config(page_title="Golden Set Inspector", layout="wide")
 GOLDEN_PATH = "data/golden_set.json"
 
 st.title("🏷️ Golden Set Evaluation Dataset Inspector")
-st.markdown("Review and verify the 180 hand-labeled customer support test cases.")
+st.markdown("Review and verify the hand-labeled customer support test cases.")
 
 if not os.path.exists(GOLDEN_PATH):
     st.error(f"Missing {GOLDEN_PATH}")

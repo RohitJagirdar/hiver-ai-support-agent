@@ -13,6 +13,7 @@ import json
 import logging
 import requests
 import datetime
+import threading
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 from dotenv import load_dotenv
@@ -25,6 +26,10 @@ from src.config import (
     UrgencyLevel,
     AgentResolutionOutput,
     HIGH_RISK_KEYWORDS,
+    PHYSICAL_SAFETY_TERMS,
+    ACCOUNT_RISK_TERMS,
+    BILLING_LEGAL_TERMS,
+    APPLE_DOMAIN_TERMS,
     AUTO_HANDLE_CONFIDENCE_THRESHOLD,
     MANDATORY_ESCALATION_INTENTS,
     AGENT_SYSTEM_PROMPT,
@@ -43,9 +48,9 @@ logger = logging.getLogger(__name__)
 #
 # Each record contains:
 #   ts              – ISO-8601 timestamp
-#   query           – raw input (before sanitization)
+#   query           – input with PII redacted (raw PII is never written to disk)
 #   handled_by      – which layer short-circuited: "guardrail" | "rag+llm"
-#   pii_detected    – dict of PII type -> list of redacted spans
+#   pii_detected    – dict of PII type -> number of matches (counts only, no values)
 #   retrieved_refs  – list of {id, score, intent} for RAG precedents used
 #   output          – full AgentResolutionOutput as dict
 # =============================================================================
@@ -70,10 +75,10 @@ class QueryHistoryLogger:
         cls._ensure_dir()
         record = {
             "ts": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            "query": query,
+            "query": PIISanitizer.sanitize(query)[0],
             "handled_by": handled_by,
             "pii_detected": {
-                k: v for k, v in (pii_detected or {}).items() if v
+                k: len(v) for k, v in (pii_detected or {}).items() if v
             },
             "retrieved_refs": [
                 {
@@ -115,43 +120,59 @@ class HiverSupportAgent:
         self.retriever = retriever
 
         if self.mock_mode:
-            logger.warning("No GEMINI_API_KEY found in .env — running in mock mode.")
+            logger.warning(
+                "Running in MOCK mode (%s): decisions come from a keyword stub, not an LLM.",
+                "forced by --mock" if mock_mode else "no GEMINI_API_KEY in .env",
+            )
         else:
             logger.info(f"LLM provider: Gemini ({self.model_name})")
+
+        # Per-run accounting so every result can say exactly what produced it.
+        # "api_failures" are live calls that errored and fell back to the mock.
+        self._stats_lock = threading.Lock()
+        self.llm_call_stats = {"live": 0, "mock": 0, "api_failures": 0}
+        self.retrieval_error: Optional[str] = None
 
         if self.retriever is None:
             csv_path = "data/processed/applesupport_pairs.csv"
             emb_path = "data/processed/embeddings_cache.npy"
             if os.path.exists(csv_path) and os.path.exists(emb_path):
-                self.retriever = load_retriever_from_disk(csv_path, emb_path)
+                try:
+                    self.retriever = load_retriever_from_disk(csv_path, emb_path)
+                except Exception as exc:
+                    self.retrieval_error = f"{type(exc).__name__}: {exc}"
+                    logger.error(
+                        "RETRIEVAL DISABLED: could not load the vector store (%s). "
+                        "Prompts will contain no grounding precedents.", self.retrieval_error
+                    )
+            else:
+                self.retrieval_error = f"missing {csv_path} or {emb_path}"
+                logger.error("RETRIEVAL DISABLED: %s", self.retrieval_error)
+
+    def _count_llm_call(self, kind: str) -> None:
+        with self._stats_lock:
+            self.llm_call_stats[kind] += 1
+
+    def describe_run_mode(self) -> str:
+        """One-line, human-readable account of what actually ran (for reports and logs)."""
+        s = self.llm_call_stats
+        llm = (
+            f"LLM: {self.model_name} ({s['live']} live calls)" if not self.mock_mode
+            else "LLM: MOCK keyword stub (no model called)"
+        )
+        if s["mock"] and not self.mock_mode:
+            llm += f", {s['mock']} calls fell back to MOCK after {s['api_failures']} API failures"
+        retrieval = "retrieval: ON" if self.retriever is not None else f"retrieval: OFF ({self.retrieval_error})"
+        return f"{llm} | {retrieval}"
 
 
     # =========================================================================
     # LAYER 1: PRE-LLM DETERMINISTIC GUARDRAILS
-    # =========================================================================
-    # =========================================================================
-    # Apple-domain entity keywords for domain gating (Layer 1)
-    _APPLE_DOMAIN_TERMS = [
-        "apple", "iphone", "ipad", "mac", "macbook", "imac", "mac mini", "mac pro",
-        "apple watch", "airpods", "homepod", "apple tv", "vision pro",
-        "ios", "macos", "ipados", "watchos", "tvos",
-        "apple id", "icloud", "itunes", "app store", "facetime", "imessage",
-        "siri", "applecare", "apple pay", "finder", "airdrop", "airplay",
-        "lightning", "usb-c", "magsafe", "apple silicon", "m1", "m2", "m3",
-        "battery", "screen", "camera", "touch id", "face id",
-        "bluetooth", "wifi", "cellular", "5g",
-        "software update", "restore", "recovery mode",
-        "apple store", "genius bar", "apple support", "apple.com",
-        "phone", "laptop", "tablet", "watch", "device", "charge", "charger",
-        "subscription", "bill", "billing", "refund", "trade-in", "trade in",
-        "account", "password", "order", "store"
-    ]
-
-    @classmethod
-    def _is_apple_domain(cls, query: str) -> bool:
+    @staticmethod
+    def _is_apple_domain(query: str) -> bool:
         """Returns True if the query mentions any Apple product, service, or platform."""
         q = query.lower()
-        return any(term in q for term in cls._APPLE_DOMAIN_TERMS)
+        return any(term in q for term in APPLE_DOMAIN_TERMS)
 
     def _pre_llm_guardrails(self, query: str) -> Optional[AgentResolutionOutput]:
         """
@@ -191,13 +212,13 @@ class HiverSupportAgent:
         query_lower = query.lower()
         for kw in HIGH_RISK_KEYWORDS:
             if re.search(r'\b' + re.escape(kw) + r'\b', query_lower):
-                if any(k in query_lower for k in ["smoke", "smoking", "expanded", "swollen", "exploded", "exploding", "fire", "burning", "toxic"]):
+                if any(k in query_lower for k in PHYSICAL_SAFETY_TERMS):
                     intent = IntentCategory.HARDWARE_ISSUES
                     reply = "Safety Alert: Please immediately stop using the device, disconnect from power, and place it in a well-ventilated, fire-safe location. Connecting you urgently to our safety team."
-                elif any(k in query_lower for k in ["stolen", "hacked", "account", "password", "apple id", "locked"]):
+                elif any(k in query_lower for k in ACCOUNT_RISK_TERMS):
                     intent = IntentCategory.ACCOUNT_SECURITY
                     reply = "We take your account security very seriously. For your protection, I am transferring your inquiry immediately to a senior account security specialist."
-                elif any(k in query_lower for k in ["bill", "charge", "refund", "card", "subpoena", "lawyer", "sue", "court"]):
+                elif any(k in query_lower for k in BILLING_LEGAL_TERMS):
                     intent = IntentCategory.BILLING_SUBSCRIPTIONS
                     reply = "We take your billing and legal concern seriously. Transferring your inquiry immediately to our senior dispute relations team."
                 else:
@@ -215,7 +236,7 @@ class HiverSupportAgent:
                 )
 
         # 4. Domain Relevance Gate — reject non-Apple queries before any LLM/RAG work
-        # Extend _APPLE_DOMAIN_TERMS or swap with a classifier if the domain vocabulary grows significantly.
+        # Extend APPLE_DOMAIN_TERMS (src/config.py) or swap with a classifier if the domain vocabulary grows significantly.
         if not self._is_apple_domain(query):
             return AgentResolutionOutput(
                 predicted_intent=IntentCategory.GENERAL_OTHER,
@@ -246,6 +267,7 @@ class HiverSupportAgent:
         Set GEMINI_API_KEY in .env to enable live LLM; otherwise falls back to mock heuristics.
         """
         if self.mock_mode:
+            self._count_llm_call("mock")
             return self._mock_llm_response(prompt)
 
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent?key={self.api_key}"
@@ -263,9 +285,14 @@ class HiverSupportAgent:
             resp = requests.post(url, json=payload, headers=headers, timeout=15)
             resp.raise_for_status()
             data = resp.json()
-            return data["candidates"][0]["content"]["parts"][0]["text"]
+            text = data["candidates"][0]["content"]["parts"][0]["text"]
+            self._count_llm_call("live")
+            return text
         except Exception as e:
-            logger.warning(f"Gemini API call failed ({e}). Falling back to local heuristic response.")
+            # Error type only: str(e) from requests can include the URL, which carries the API key.
+            logger.warning(f"Gemini API call failed ({type(e).__name__}). Falling back to MOCK response.")
+            self._count_llm_call("api_failures")
+            self._count_llm_call("mock")
             return self._mock_llm_response(prompt)
 
 
@@ -433,13 +460,13 @@ class HiverSupportAgent:
     # =========================================================================
     # LAYER 4: POST-LLM POLICY & CONFIDENCE GATE
     # =========================================================================
-    def _post_llm_policy_gate(
-        self,
-        output: AgentResolutionOutput,
-        customer_query: str
-    ) -> AgentResolutionOutput:
+    def _post_llm_policy_gate(self, output: AgentResolutionOutput) -> AgentResolutionOutput:
         """
-        Validates the output against business policies and confidence thresholds.
+        Overrides the LLM's routing decision with two deterministic rules:
+          1. Intents in MANDATORY_ESCALATION_INTENTS are always escalated.
+          2. Anything below AUTO_HANDLE_CONFIDENCE_THRESHOLD is escalated.
+        The gate can only turn AUTO_HANDLE into ESCALATE_TO_HUMAN, never the reverse.
+        It does NOT verify that the draft reply is grounded in the retrieved precedents.
         """
         # Rule 1: Mandatory Escalation Intents (e.g. Account Takeover)
         if output.predicted_intent in MANDATORY_ESCALATION_INTENTS:
@@ -548,7 +575,7 @@ Analyze the customer's query, classify intent, review historical precedents, and
             )
 
         # Step 6: Post-LLM Policy Gate
-        final_output = self._post_llm_policy_gate(output, query)
+        final_output = self._post_llm_policy_gate(output)
 
         # Step 7: Persist to query history log (silent, never raises)
         QueryHistoryLogger.log(

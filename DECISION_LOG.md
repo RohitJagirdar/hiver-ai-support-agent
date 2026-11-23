@@ -13,45 +13,45 @@ This document records the 12 key non-obvious engineering decisions, rationale, a
 
 ### 2. Filtering Out the "DM Redirection" Boilerplate Trap
 * **Decision**: Implemented an automated filter in `src/data_extractor.py` requiring responses to be $\ge 45$ characters and excluding pure DM boilerplate (e.g., regex matching `^(please )?(send us a dm|dm us)` unless accompanied by substantive diagnostic steps).
-* **Why**: Over 60% of raw brand replies in Kaggle's Twitter dataset are empty redirects: *"We'd be glad to look into this. Please send us a DM with your iOS version."* If indexed naively into a vector store, top-$k$ RAG retrieval returns useless boilerplate, causing the LLM to learn passive deflection rather than troubleshooting.
-* **Alternative Considered**: Raw sampling of the top 2,000 tweets (rejected because it produced an agent that suggested "Send a DM" for 100% of queries).
+* **Why**: A large share of raw brand replies in Kaggle's Twitter dataset are empty redirects: *"We'd be glad to look into this. Please send us a DM with your iOS version."* If indexed naively into a vector store, top-$k$ RAG retrieval returns useless boilerplate, causing the LLM to learn passive deflection rather than troubleshooting.
+* **Alternative Considered**: Raw sampling of the top 2,000 replies (rejected because retrieved precedents were dominated by "Send us a DM" replies, which the LLM then copied).
 
 ---
 
 ### 3. Pure NumPy Normalized Cosine Engine with FAISS Bridge
 * **Decision**: Defaulted to BLAS-accelerated NumPy matrix multiplication (`query_vector @ embeddings.T`) for vector similarity while providing a drop-in FAISS bridge if installed.
-* **Why**: Our curated historical knowledge base contains 1,998 vectors of dimension 384 (`all-MiniLM-L6-v2`), requiring only ~3 MB of RAM. At this scale, NumPy exact dot product runs in **< 0.4 milliseconds**, achieves 100% exact recall, and avoids binary C++ build failures on reviewer environments (especially Windows/Python 3.12+).
+* **Why**: Our curated historical knowledge base contains 1,998 vectors of dimension 384 (`all-MiniLM-L6-v2`), requiring only ~3 MB of RAM. At this scale, an exact NumPy dot product plus sort takes **under 0.1 ms** per query, has no approximation error, and avoids binary C++ build failures on other machines (especially Windows/Python 3.12+).
 * **Alternative Considered**: Pinecone / ChromaDB / Weaviate (rejected due to cloud dependencies, network latency overhead, and API keys).
 
 ---
 
 ### 4. 4-Layer Directed State Graph vs. Monolithic LLM Prompt
 * **Decision**: Decoupled the architecture into:
-  1. *Deterministic Pre-Guardrails*
-  2. *Intent-Aware Context Retrieval (RAG)*
-  3. *Structured LLM Generation*
-  4. *Post-LLM Policy & Confidence Arbiter*
-* **Why**: A monolithic "all-in-one" LLM prompt is vulnerable to prompt injection, wastes tokens on obvious deterministic cases (e.g. legal threats or PII), and cannot reliably self-terminate when confidence is low.
+    1. *Deterministic Pre-Guardrails*
+    2. *Context Retrieval (RAG)*
+    3. *Structured LLM Generation*
+    4. *Post-LLM Policy & Confidence Arbiter*
+* **Why**: A monolithic "all-in-one" LLM prompt is vulnerable to prompt injection, wastes tokens on obvious deterministic cases (e.g. legal threats or PII), and cannot reliably self-terminate when confidence is low. Splitting the layers also makes every escalation traceable to the rule or threshold that caused it.
 * **Alternative Considered**: Single-prompt LangChain pipeline (rejected due to lack of explainability and non-deterministic escalation behavior).
 
 ---
 
-### 5. Stratified 60 / 20 / 20 Golden Evaluation Set Difficulty Distribution
-* **Decision**: Structured the 180-sample hand-labeled Golden Set into 60% Standard Core issues, 20% Ambiguous/Sarcastic Edge cases, and 20% High-Risk Escalation Triggers.
-* **Why**: Random sampling over-represents easy majority classes, yielding inflated accuracy (e.g. 98%) that collapses in production. Deliberately injecting edge cases (sarcasm, multi-intent collision) and security threats guarantees realistic stress-testing.
+### 5. Stratified Golden Evaluation Set
+* **Decision**: Built the hand-labeled Golden Set from three strata: Standard Core issues, Ambiguous/Sarcastic Edge cases, and High-Risk Escalation Triggers. The set has 21 queries (11 / 5 / 5): 11 need a human and 10 can be auto-handled.
+* **Why**: Random sampling over-represents easy majority classes, yielding inflated accuracy (e.g. 98%) that collapses in production. Deliberately including edge cases (sarcasm, multi-intent collision) and security threats tests the failures that matter most. The trade-off is size: 21 queries is enough to catch obvious breakage, not to estimate production rates (see REPORT.md, section 4).
 * **Alternative Considered**: Uniform random sampling from historical test sets (rejected due to severe class imbalance and temporal bias).
 
 ---
 
 ### 6. Asymmetric Cost Function on Routing Errors
 * **Decision**: Explicitly prioritized minimizing the **False Auto-Handle Rate** over minimizing the False Escalation Rate.
-* **Why**: In customer support, errors are asymmetric. A *False Escalation* costs ~$3 in human agent triage time; a *False Auto-Handle* (e.g., instructing a customer with an expanding, smoking battery to force-restart their device, or dismissing a customer threatening a CFPB complaint) creates legal liability, PR backlash, and customer churn.
+* **Why**: In customer support, errors are asymmetric. A *False Escalation* costs a few minutes of human agent time; a *False Auto-Handle* (e.g., instructing a customer with an expanding, smoking battery to force-restart their device, or dismissing a customer threatening a CFPB complaint) creates legal liability, PR backlash, and customer churn.
 * **Alternative Considered**: Equal weight F1-score optimization (rejected because it treats safety-critical failures identically to routine misclassifications).
 
 ---
 
-### 7. Dual Deterministic PII Sanitization & Automatic Privacy Escalation
-* **Decision**: Ingested tweets are scanned and redacted for Credit Cards, Passwords, Emails, Phone Numbers, and IMEI *before* vector search or LLM prompting. Any public PII exposure immediately triggers `ESCALATE_TO_HUMAN` with a privacy warning.
+### 7. Deterministic PII Detection & Automatic Privacy Escalation
+* **Decision**: Every tweet is scanned for credit cards, passwords, emails, phone numbers and IMEIs *before* retrieval or any LLM call. Any match triggers `ESCALATE_TO_HUMAN` with a privacy warning, so raw PII never reaches the vector search or the LLM. The query log stores only the redacted text and PII counts.
 * **Why**: Customers frequently tweet sensitive data in public anger. If the AI echoes this data in a public Twitter reply, it causes a catastrophic privacy breach. Our agent warns the customer to delete the public tweet and routes to private DM.
 * **Alternative Considered**: Relying on the LLM to ignore customer credit card numbers (rejected because LLMs frequently repeat context in their generation).
 
@@ -60,27 +60,29 @@ This document records the 12 key non-obvious engineering decisions, rationale, a
 ### 8. Eager Single-Instance Model Loading for Thread Safety
 * **Decision**: Eagerly loaded `SentenceTransformer` once during `load_retriever_from_disk()` on the main thread rather than on-demand inside worker threads.
 * **Why**: In `EvaluationHarness`, batch evaluation uses `ThreadPoolExecutor(max_workers=5)`. Lazy initialization caused 5 threads to concurrently download weights and allocate 5 duplicate model instances in PyTorch memory.
-* **Alternative Considered**: Synchronous sequential evaluation (rejected because it slowed 180-sample evaluation from 30s to 3+ minutes).
+* **Alternative Considered**: Synchronous sequential evaluation (rejected because sequential live-API evaluation was several times slower).
 
 ---
 
 ### 9. Resilient Zero-API-Key Offline Mock Mode (`--mock`)
-* **Decision**: Integrated a deterministic heuristic fallback resolver that mimics LLM behavior using retrieved context if `GEMINI_API_KEY` is not present.
-* **Why**: Reviewers often clone a repository and run `python run_pipeline.py` immediately. Crashing with `KeyError: 'GEMINI_API_KEY'` guarantees a negative review.
-* **Alternative Considered**: Requiring the user to configure API keys before running any script (rejected to ensure guaranteed < 2-minute reproduction).
+* **Decision**: When `GEMINI_API_KEY` is missing (or `--mock` is passed), the LLM is replaced by a deterministic keyword-rule stub. The stub ignores retrieved context on purpose, so keywords in precedents can't leak into its intent decision.
+* **Why**: People often clone a repository and run `python run_pipeline.py` straight away. If that crashes with `KeyError: 'GEMINI_API_KEY'`, they can't check anything else.
+* **Trade-off**: mock numbers measure the rules, not a model. Every run prints which mode produced it, and live API failures that fall back to the mock are counted, so mock results can't be mistaken for live ones.
+* **Alternative Considered**: Requiring an API key before running anything (rejected because it blocks anyone without a key from checking that the pipeline works).
 
 ---
 
 ### 10. Dual Metric Judge Calibration (Pearson $r$ + Cohen's $\kappa$)
 * **Decision**: Evaluated the LLM-as-a-Judge against human ground truth using both continuous correlation (Pearson $r$) and discrete inter-rater agreement (Cohen's Kappa $\kappa$).
-* **Why**: Pearson $r$ measures linear correlation in continuous rating trends, while Cohen's $\kappa$ accounts for chance agreement on binary go/no-go decisions. Providing both proves mathematical calibration.
+* **Why**: Pearson $r$ measures linear correlation in continuous rating trends, while Cohen's $\kappa$ accounts for chance agreement on binary go/no-go decisions. Reporting both gives a fuller picture of agreement. Neither is meaningful on the current 5-item calibration set or with the mock judge; a real check needs 50+ borderline replies scored by two humans.
 * **Alternative Considered**: Simple percentage accuracy (rejected because it fails to correct for random chance agreement on skewed classes).
 
 ---
 
 ### 11. Keyword-Boosted Hybrid Retrieval over Pure Dense Search
-* **Decision**: Added keyword boosting for specific Apple product models (`"iPhone 13"`, `"AirPods Pro"`, `"iOS 17"`) on top of MiniLM cosine similarity.
+* **Decision**: Re-ranked the top 9 MiniLM cosine matches with a small keyword boost: +0.05 for each query word (3+ characters) found in the precedent, capped at +0.15.
 * **Why**: Pure dense embedding models often place all iPhone hardware queries close together in vector space, failing to distinguish between device generations that have different button combinations for force restarts (e.g. iPhone 7 vs iPhone 14).
+* **Known gap**: because the boost skips words under 3 characters, model numbers like "7" and "14" are dropped, so it does not yet separate those generations. Matching model tokens explicitly (e.g. `iphone\s?\d{1,2}`) is the next step, measured with recall@3.
 * **Alternative Considered**: Heavy BM25 + Cross-Encoder re-ranking (rejected due to added runtime latency and dependency complexity).
 
 ---

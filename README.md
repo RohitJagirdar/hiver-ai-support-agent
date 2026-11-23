@@ -1,17 +1,14 @@
 # Hiver AI Support Agent: Autonomous Twitter Support for @AppleSupport
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Reproducibility](https://img.shields.io/badge/Reproducibility-%3C%202%20Minutes-brightgreen.svg)]()
-[![Zero-Cost](https://img.shields.io/badge/Cost-%240.00%20(Free%20Tier)-success.svg)]()
 
-Production-grade, trustworthy customer support agent built for **@AppleSupport** on Twitter. Engineered for high-precision intent classification, grounded troubleshooting retrieval (RAG), and risk-calibrated escalation to human specialists.
+First-reply triage agent for **@AppleSupport** on Twitter: classifies the tweet's intent, retrieves similar past Apple Support replies, and either drafts a reply or escalates to a human. Built to escalate whenever there is legal, safety, security or privacy risk.
 
 ---
 
-##  2-Minute Quick Start (Reproduction Guarantee)
+##  Quick Start
 
-The entire pipeline, pre-cached vector embeddings, and golden evaluation dataset are self-contained. **No 800MB Kaggle downloads or paid API keys required.**
+The pipeline, pre-computed embeddings and golden set are all in the repo. **No Kaggle download or API key is needed**: without `GEMINI_API_KEY` the agent runs in mock mode. The first run downloads the MiniLM embedding model (~90 MB) from Hugging Face.
 
 ### 1. Clone & Initialize Environment
 ```bash
@@ -25,23 +22,24 @@ python -m venv .venv
 # On Linux/macOS:
 source .venv/bin/activate
 
-# Install lightweight dependencies (< 45 seconds)
+# Install dependencies (includes PyTorch via sentence-transformers, so the first install takes a few minutes)
 pip install -r requirements.txt
 ```
 
-### 2. Run Reproducible Headline Benchmarks
+### 2. Run the Benchmarks
 ```bash
-# A. Quick Benchmark on 20 stratified samples (~8 seconds)
-python run_pipeline.py --mode quick
+# A. Quick smoke test on the first 10 golden queries
+python run_pipeline.py --mode quick --mock
 
-# B. Full 180-Sample Golden Evaluation Benchmark (~30 seconds)
-python run_pipeline.py --mode full
+# B. Full benchmark on all 21 golden queries
+python run_pipeline.py --mode full --mock
 
-# C. Verify LLM-as-a-Judge Human Alignment Study (Pearson r & Cohen's Kappa)
-python run_pipeline.py --calibrate
+# C. LLM-as-a-Judge vs human scores (Pearson r & Cohen's Kappa)
+python run_pipeline.py --calibrate --mock
 ```
 
-### 3. Interactive Single-Query Testing
+### 3. Single-Query Testing
+Add `--mock` to force mock mode even when a key is set.
 ```bash
 # Test 1: Standard Hardware Issue (Auto-Handled with force-restart instructions)
 python run_pipeline.py --test "My iPhone 14 screen suddenly went black and won't turn on"
@@ -62,15 +60,15 @@ streamlit run app/demo_ui.py
 
 ##  Headline Benchmark Results
 
-Evaluated across the **180 hand-labeled Golden Evaluation Set** (60% Standard / 20% Edge / 20% High-Risk Escalation):
+Golden set: **21 hand-labeled tweets** (11 standard, 5 edge, 5 high-risk; 11 need a human, 10 can be auto-handled). Numbers below are from `--mock` mode, where the LLM is replaced by a keyword stub. See [REPORT.md](REPORT.md) for how to read them.
 
-| Pipeline Architecture | Intent Macro-F1 | Routing Accuracy | False Auto-Handle % (Critical Safety Breaches) | False Escalation % (Unnecessary Human Triage) | Human-Judge Correlation ($r$) |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Baseline 1: Trivial Keyword/Canned** | 41.2% | 61.1% | 44.4% *(Dangerous)* | 35.2% | N/A |
-| **Baseline 2: Zero-Shot LLM (No RAG)** | 71.8% | 68.3% | 31.8% *(High Risk)* | 29.6% | 0.62 |
-| **Proposed Hiver Support Agent** | **88.4%** | **87.2%** | **0.0% *(Safest)*** | **16.7%** | **0.9985 ($\kappa = 1.0$)** |
+| System | Intent Macro-F1 | Routing Accuracy | False Auto-Handles (of 11) | False Escalations (of 10) |
+| :--- | :---: | :---: | :---: | :---: |
+| Baseline 1: keywords + canned replies | 81.4% | 57% (12/21) | 9 | 0 |
+| Baseline 2: zero-shot LLM (mock stub) | 77.6% | 48% (10/21) | 11 | 0 |
+| Proposed agent (mock LLM) | 86.1% | 100% (21/21) | 0 | 0 |
 
-> **Critical Safety Takeaway**: Both naive baselines suffered high False Auto-Handle rates (31%–44%), dangerously attempting to auto-troubleshoot stolen devices, active lawsuits, and smoking batteries. This proposed system eliminates False Auto-Handles to **0.0%** through deterministic pre-guardrails and post-LLM policy gates.
+Baseline 1 uses no LLM, so it is the one independent comparison: it auto-handles 9 of the 11 tweets that needed a human. The agent's 21/21 is a pipeline check, not a quality claim, because the mock rules were written with these tweets in view. On 10 unseen paraphrases it routed 7 correctly and auto-handled 2 of 6 risky ones (details in the report). No live-LLM numbers are currently reproducible.
 
 ---
 
@@ -81,14 +79,17 @@ Evaluated across the **180 hand-labeled Golden Evaluation Set** (60% Standard / 
                                                │
                                                ▼
                               ┌──────────────────────────────────┐
-                              │    Pre-processing & Sanitizer    │
-                              │ (PII Redaction: Cards, Emails)   │
+                              │ Deterministic Guardrails (no LLM)│
+                              │ 1. Prompt injection patterns     │
+                              │ 2. PII (cards, emails, phones…)  │
+                              │ 3. Legal / safety / security kw  │
+                              │ 4. Apple-domain check            │
                               └────────────────┬─────────────────┘
                                                │
                                                ▼
                                   /───────────────────────\
-                                 <  Check Security Triggers? > ──[Yes: Legal/PII/Hacked]──► [ ESCALATE TO HUMAN ]
-                                  \───────────────────────/                                   (0ms / $0 cost)
+                                 <    Any check fired?     > ──[Yes]──► [ ESCALATE TO HUMAN ]
+                                  \───────────────────────/              (no LLM call, no cost)
                                                │ No
                                                ▼
                               ┌──────────────────────────────────┐
@@ -105,7 +106,8 @@ Evaluated across the **180 hand-labeled Golden Evaluation Set** (60% Standard / 
                                                ▼
                                   /───────────────────────\
                                  <  Confidence >= 0.70 &   > ──[No: Ambiguous/Low Conf]──► [ ESCALATE TO HUMAN ]
-                                 <   Verified Grounding?   >
+                                 <  Not a Mandatory-Esc.   >
+                                 <        Intent?          >
                                   \───────────────────────/
                                                │ Yes
                                                ▼
@@ -119,24 +121,29 @@ Evaluated across the **180 hand-labeled Golden Evaluation Set** (60% Standard / 
 ```
 hiver-ai-support-agent/
 ├── README.md                      # Headline reproduction & quickstart guide
-├── REPORT.md                      # Max 6-page comprehensive evaluation report
-├── DECISION_LOG.md                # 12 justified non-obvious engineering decisions
-├── requirements.txt               # Pinned dependencies
+├── REPORT.md                      # Evaluation report: results, failure analysis, limits
+├── DECISION_LOG.md                # 12 design decisions with trade-offs
+├── requirements.txt               # Dependencies
+├── Dockerfile                     # Container build
 ├── .env.example                   # Example environment configuration
 ├── run_pipeline.py                # Top-level CLI evaluation runner
 │
+├── scripts/
+│   ├── curate_dataset.py          # Builds the knowledge base from raw Kaggle data
+│   └── build_vector_cache.py      # Recomputes the MiniLM embeddings cache
+│
 ├── data/
 │   ├── processed/
-│   │   ├── applesupport_pairs.csv # 1,998 curated troubleshooting pairs (~1.5 MB)
+│   │   ├── applesupport_pairs.csv # 1,998 rows (772 unique) troubleshooting pairs
 │   │   └── embeddings_cache.npy   # Precomputed MiniLM embeddings (384-dim, ~3 MB)
-│   ├── golden_set.json            # 180 hand-labeled instances (60/20/20 difficulty split)
-│   └── calibration_sample.json    # 30 paired Human-vs-Judge test items
+│   ├── golden_set.json            # 21 hand-labeled queries (11 standard / 5 edge / 5 high-risk)
+│   └── calibration_sample.json    # 5 human-scored replies for judge calibration
 │
 ├── src/
 │   ├── config.py                  # Schemas, prompts, guardrails, and extension points
 │   ├── security.py                # PII regex sanitization & prompt injection interceptor
 │   ├── retriever.py               # VectorStore (NumPy cosine similarity + FAISS bridge)
-│   ├── agent.py                   # Core 4-layer autonomous HiverSupportAgent
+│   ├── agent.py                   # 4-layer HiverSupportAgent (+ mock LLM, query log)
 │   ├── baselines.py               # Baseline 1 (Trivial) and Baseline 2 (Zero-shot)
 │   ├── evaluator.py               # Automated metrics + LLM-as-a-Judge calibration
 │   └── data_extractor.py          # Extraction script from raw Kaggle twcs.csv
@@ -147,12 +154,8 @@ hiver-ai-support-agent/
 │
 └── tests/
     ├── test_smoke.py              # Synchronous sanity unit tests
-    └── test_vulnerability_and_ab.py # Comprehensive PII & vulnerability A/B test suite
+    └── test_vulnerability_and_ab.py # PII, prompt-injection and safety tests
 ```
-
----
-
-
 
 ---
 

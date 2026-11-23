@@ -170,7 +170,7 @@ Evaluate this response according to the rubric and return the JSON object."""
         calibration_path: str = "data/calibration_sample.json"
     ) -> Dict[str, Any]:
         """
-        Evaluates the 30 paired test cases and computes Pearson Correlation (r)
+        Evaluates the paired human-scored test cases and computes Pearson Correlation (r)
         and Cohen's Kappa to prove that the LLM judge reliably agrees with a human.
         """
         if not os.path.exists(calibration_path):
@@ -198,21 +198,32 @@ Evaluate this response according to the rubric and return the JSON object."""
             human_accept.append(1 if h_score >= 3.5 else 0)
             judge_accept.append(1 if j_score >= 3.5 else 0)
 
-        # Pearson correlation on continuous overall scores
+        # Pearson correlation on continuous overall scores.
+        # If either side has zero variance, r is mathematically undefined: report None, never a placeholder.
         if len(set(human_overall)) > 1 and len(set(judge_overall)) > 1:
-            r_val, p_val = pearsonr(human_overall, judge_overall)
+            r_val, p_val = (float(x) for x in pearsonr(human_overall, judge_overall))
         else:
-            r_val, p_val = 0.85, 0.001
+            r_val, p_val = None, None
 
         # Cohen's Kappa on binary quality decisions
-        kappa_val = cohen_kappa_score(human_accept, judge_accept)
+        kappa_val = float(cohen_kappa_score(human_accept, judge_accept))
+
+        if self.agent.mock_mode:
+            # The mock judge is a keyword stub (see HiverSupportAgent._mock_llm_response) whose
+            # rules key off phrases in the calibration set, so agreement here proves nothing.
+            status = "NOT MEANINGFUL (mock judge is a keyword stub, not an LLM)"
+        elif r_val is None:
+            status = "UNDEFINED (zero variance in scores)"
+        else:
+            status = "HIGH ALIGNMENT" if r_val >= 0.70 else "MODERATE ALIGNMENT"
 
         return {
             "sample_size": len(samples),
-            "pearson_correlation": round(float(r_val), 4),
-            "p_value": round(float(p_val), 6),
-            "cohen_kappa": round(float(kappa_val), 4),
-            "judge_alignment_status": "HIGH ALIGNMENT" if r_val >= 0.70 else "MODERATE ALIGNMENT",
+            "pearson_correlation": None if r_val is None else round(r_val, 4),
+            "p_value": None if p_val is None else round(p_val, 6),
+            "cohen_kappa": round(kappa_val, 4),
+            "judge_alignment_status": status,
+            "run_mode": self.agent.describe_run_mode(),
             "mean_human_score": round(float(np.mean(human_overall)), 2),
             "mean_judge_score": round(float(np.mean(judge_overall)), 2)
         }
