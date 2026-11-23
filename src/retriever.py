@@ -1,5 +1,7 @@
 """
-Retriever Module: Local Semantic Vector Search with Keyword Boosting and NumPy/FAISS fallback.
+Retriever Module: Local Semantic Vector Search with Keyword Boosting (NumPy, or FAISS if installed).
+Requires sentence-transformers; there is deliberately no fallback embedding, because
+retrieval over random or fake vectors would silently corrupt every downstream result.
 Provides fast, deterministic grounding for customer queries against historical Apple resolutions.
 """
 
@@ -36,9 +38,14 @@ class VectorStore:
         model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
         eager_load: bool = True
     ):
+        if not HAS_ST:
+            raise ImportError(
+                "sentence-transformers is not installed, so queries cannot be embedded. "
+                "Install it with `pip install -r requirements.txt`."
+            )
         self.documents = documents
         self.model_name = model_name
-        self._model = SentenceTransformer(model_name) if (HAS_ST and eager_load) else None
+        self._model = SentenceTransformer(model_name) if eager_load else None
 
         # Normalize embeddings for cosine similarity
         norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
@@ -54,18 +61,15 @@ class VectorStore:
 
     @property
     def model(self):
-        if self._model is None and HAS_ST:
+        if self._model is None:
             self._model = SentenceTransformer(self.model_name)
         return self._model
 
     def encode(self, texts: List[str]) -> np.ndarray:
-        if self.model is not None:
-            embs = self.model.encode(texts, convert_to_numpy=True, show_progress_bar=False)
-            norms = np.linalg.norm(embs, axis=1, keepdims=True)
-            norms[norms == 0] = 1e-10
-            return (embs / norms).astype(np.float32)
-        # Fallback simple bag-of-words / pseudo-embedding if model not loaded
-        return np.random.randn(len(texts), self.embeddings.shape[1]).astype(np.float32)
+        embs = self.model.encode(texts, convert_to_numpy=True, show_progress_bar=False)
+        norms = np.linalg.norm(embs, axis=1, keepdims=True)
+        norms[norms == 0] = 1e-10
+        return (embs / norms).astype(np.float32)
 
     def search(
         self,

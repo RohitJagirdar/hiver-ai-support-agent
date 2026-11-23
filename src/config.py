@@ -84,6 +84,33 @@ HIGH_RISK_KEYWORDS = [
     "fire", "burning", "toxic", "burned"
 ]
 
+# When a HIGH_RISK_KEYWORD fires, these lists pick which specialist team
+# (and canned reply) the escalation is routed to. Checked in this order.
+PHYSICAL_SAFETY_TERMS = [
+    "smoke", "smoking", "expanded", "swollen", "exploded", "exploding",
+    "fire", "burning", "toxic"
+]
+ACCOUNT_RISK_TERMS = ["stolen", "hacked", "account", "password", "apple id", "locked"]
+BILLING_LEGAL_TERMS = ["bill", "charge", "refund", "card", "subpoena", "lawyer", "sue", "court"]
+
+# Domain relevance gate: a query must mention at least one of these terms,
+# otherwise it is escalated as out-of-domain before any retrieval or LLM call.
+APPLE_DOMAIN_TERMS = [
+    "apple", "iphone", "ipad", "mac", "macbook", "imac", "mac mini", "mac pro",
+    "apple watch", "airpods", "homepod", "apple tv", "vision pro",
+    "ios", "macos", "ipados", "watchos", "tvos",
+    "apple id", "icloud", "itunes", "app store", "facetime", "imessage",
+    "siri", "applecare", "apple pay", "finder", "airdrop", "airplay",
+    "lightning", "usb-c", "magsafe", "apple silicon", "m1", "m2", "m3",
+    "battery", "screen", "camera", "touch id", "face id",
+    "bluetooth", "wifi", "cellular", "5g",
+    "software update", "restore", "recovery mode",
+    "apple store", "genius bar", "apple support", "apple.com",
+    "phone", "laptop", "tablet", "watch", "device", "charge", "charger",
+    "subscription", "bill", "billing", "refund", "trade-in", "trade in",
+    "account", "password", "order", "store"
+]
+
 # Minimum confidence required to auto-handle
 # CONFIG_HOOK: Adjust confidence threshold (e.g., raise to 0.85 for conservative auto-handling)
 AUTO_HANDLE_CONFIDENCE_THRESHOLD = 0.70

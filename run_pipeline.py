@@ -15,7 +15,6 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 from src.config import IntentCategory, ActionDecision
-from src.retriever import load_retriever_from_disk
 from src.agent import HiverSupportAgent
 from src.baselines import TrivialBaseline, SimpleZeroShotBaseline
 from src.evaluator import EvaluationHarness
@@ -82,11 +81,13 @@ def run_benchmark(mode: str, mock: bool = False):
 
     # Initialize components
     print("Loading vector retrieval engine...")
-    csv_path = "data/processed/applesupport_pairs.csv"
-    emb_path = "data/processed/embeddings_cache.npy"
-    retriever = load_retriever_from_disk(csv_path, emb_path)
-
-    agent = HiverSupportAgent(retriever=retriever, mock_mode=mock)
+    agent = HiverSupportAgent(mock_mode=mock)
+    if agent.retriever is None and not agent.mock_mode:
+        # A live run without grounding would be reported as the RAG system but isn't one.
+        print(f"Error: retrieval is unavailable ({agent.retrieval_error}). Refusing to run a live "
+              "benchmark without it. Fix the install, or pass --mock for a smoke test.")
+        sys.exit(1)
+    print(f"Run mode: {agent.describe_run_mode()}")
     trivial_baseline = TrivialBaseline()
     zero_shot_baseline = SimpleZeroShotBaseline(agent)
 
@@ -142,6 +143,13 @@ def run_benchmark(mode: str, mock: bool = False):
     print(f"  * True Escalations (High-Risk Protected):    {agent_metrics['true_escalations']}")
     print(f"  * False Escalations (Unnecessary human review): {agent_metrics['false_escalations']}")
     print(f"  * False Auto-Handles (Critical Safety Failures): {agent_metrics['false_auto_handles']}")
+    print(f"\nRun mode (shared by Baseline 2 and the proposed agent): {agent.describe_run_mode()}")
+    if agent.mock_mode:
+        print("NOTE: mock mode replaces the LLM with a hand-written keyword stub. Treat these")
+        print("      numbers as a pipeline smoke test, not as a measure of model quality.")
+    elif agent.llm_call_stats["api_failures"]:
+        print("WARNING: some API calls failed and fell back to the mock, so these results")
+        print("         mix live-model and mock outputs.")
     print("=" * 80 + "\n")
 
 
@@ -160,6 +168,7 @@ def run_calibration(mock: bool = False):
     print(f"  * Mean Human Overall Score:    {cal_results['mean_human_score']} / 5.0")
     print(f"  * Mean Judge Overall Score:    {cal_results['mean_judge_score']} / 5.0")
     print(f"  * Judge Calibration Status:    {cal_results['judge_alignment_status']}")
+    print(f"  * Run Mode:                    {cal_results['run_mode']}")
     print("=" * 80 + "\n")
 
 

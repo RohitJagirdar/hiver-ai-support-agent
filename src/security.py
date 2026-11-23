@@ -4,7 +4,7 @@ Provides deterministic redaction and detection for sensitive customer data:
 - Credit Card Numbers / Banking details
 - Email Addresses
 - Phone Numbers
-- Apple Serial Numbers & IMEI
+- IMEI numbers
 - Passwords & Security Tokens
 - Adversarial Prompt Injection Patterns
 Ensures customer personal info in public tweets never leaks into draft replies or vector storage.
@@ -33,9 +33,8 @@ PHONE_REGEX = re.compile(
     r"(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b"
 )
 
-# Apple Serial Numbers (10-12 alphanumeric) & IMEI (15 digits)
+# IMEI (15 digits)
 IMEI_REGEX = re.compile(r"\b\d{15}\b")
-SERIAL_REGEX = re.compile(r"\b[A-Z0-9]{10,12}\b")
 
 # Password / PIN disclosure keywords
 PASSWORD_PATTERN = re.compile(

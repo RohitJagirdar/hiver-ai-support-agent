@@ -105,7 +105,8 @@ Evaluated across the **180 hand-labeled Golden Evaluation Set** (60% Standard / 
                                                ▼
                                   /───────────────────────\
                                  <  Confidence >= 0.70 &   > ──[No: Ambiguous/Low Conf]──► [ ESCALATE TO HUMAN ]
-                                 <   Verified Grounding?   >
+                                 <  Not a Mandatory-Esc.   >
+                                 <        Intent?          >
                                   \───────────────────────/
                                                │ Yes
                                                ▼
