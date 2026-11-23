@@ -491,9 +491,9 @@ with st.sidebar:
         f'<div style="font-size:0.8rem;color:{text_muted};line-height:1.8;">'
         f'• Model: <strong style="color:{provider_color};">{provider_label}</strong><br>'
         f'• Vector Retrieval: <strong style="color:{text_sub};">NumPy Cosine (all-MiniLM)</strong><br>'
-        f'• Knowledge Base: <strong style="color:{text_sub};">1,998 Verified Pairs</strong><br>'
+        f'• Knowledge Base: <strong style="color:{text_sub};">1,998 Curated Pairs</strong><br>'
         f'• Safe Auto-Handle Cutoff: <strong style="color:{text_sub};">≥ 70% Confidence</strong><br>'
-        f'• Evaluation Set: <strong style="color:{text_sub};">180 Hand-Labeled Samples</strong>'
+        f'• Evaluation Set: <strong style="color:{text_sub};">21 Hand-Labeled Queries</strong>'
         f'</div>',
         unsafe_allow_html=True
     )

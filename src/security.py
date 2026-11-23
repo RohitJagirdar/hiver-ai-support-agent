@@ -47,7 +47,8 @@ PASSWORD_PATTERN = re.compile(
 # =============================================================================
 
 INJECTION_PATTERNS = [
-    r"ignore\s+(all\s+)?(previous|prior)\s+instructions",
+    # Allow a determiner before "previous": "ignore your/the/my/all previous instructions".
+    r"ignore\s+(all\s+)?((your|the|my|any)\s+)?(previous|prior|above)\s+(instructions|rules|prompts?)",
     r"system\s+override",
     r"you\s+are\s+now\s+(a|an|dan|unrestricted)",
     r"give\s+me\s+(a\s+)?free\s+(gift\s+card|promo|code|money)",

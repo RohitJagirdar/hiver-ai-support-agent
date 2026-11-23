@@ -27,17 +27,17 @@ This document records the 12 key non-obvious engineering decisions, rationale, a
 
 ### 4. 4-Layer Directed State Graph vs. Monolithic LLM Prompt
 * **Decision**: Decoupled the architecture into:
-  1. *Deterministic Pre-Guardrails*
-  2. *Intent-Aware Context Retrieval (RAG)*
-  3. *Structured LLM Generation*
-  4. *Post-LLM Policy & Confidence Arbiter*
+    1. *Deterministic Pre-Guardrails*
+    2. *Intent-Aware Context Retrieval (RAG)*
+    3. *Structured LLM Generation*
+    4. *Post-LLM Policy & Confidence Arbiter*
 * **Why**: A monolithic "all-in-one" LLM prompt is vulnerable to prompt injection, wastes tokens on obvious deterministic cases (e.g. legal threats or PII), and cannot reliably self-terminate when confidence is low.
 * **Alternative Considered**: Single-prompt LangChain pipeline (rejected due to lack of explainability and non-deterministic escalation behavior).
 
 ---
 
-### 5. Stratified 60 / 20 / 20 Golden Evaluation Set Difficulty Distribution
-* **Decision**: Structured the 180-sample hand-labeled Golden Set into 60% Standard Core issues, 20% Ambiguous/Sarcastic Edge cases, and 20% High-Risk Escalation Triggers.
+### 5. Stratified Golden Evaluation Set
+* **Decision**: Built the hand-labeled Golden Set from three strata: Standard Core issues, Ambiguous/Sarcastic Edge cases, and High-Risk Escalation Triggers. The current set is 21 unique queries (11 / 5 / 5); an earlier version padded this to 180 rows by repeating them, which has been removed.
 * **Why**: Random sampling over-represents easy majority classes, yielding inflated accuracy (e.g. 98%) that collapses in production. Deliberately injecting edge cases (sarcasm, multi-intent collision) and security threats guarantees realistic stress-testing.
 * **Alternative Considered**: Uniform random sampling from historical test sets (rejected due to severe class imbalance and temporal bias).
 
@@ -60,7 +60,7 @@ This document records the 12 key non-obvious engineering decisions, rationale, a
 ### 8. Eager Single-Instance Model Loading for Thread Safety
 * **Decision**: Eagerly loaded `SentenceTransformer` once during `load_retriever_from_disk()` on the main thread rather than on-demand inside worker threads.
 * **Why**: In `EvaluationHarness`, batch evaluation uses `ThreadPoolExecutor(max_workers=5)`. Lazy initialization caused 5 threads to concurrently download weights and allocate 5 duplicate model instances in PyTorch memory.
-* **Alternative Considered**: Synchronous sequential evaluation (rejected because it slowed 180-sample evaluation from 30s to 3+ minutes).
+* **Alternative Considered**: Synchronous sequential evaluation (rejected because sequential live-API evaluation was several times slower).
 
 ---
 
@@ -73,7 +73,7 @@ This document records the 12 key non-obvious engineering decisions, rationale, a
 
 ### 10. Dual Metric Judge Calibration (Pearson $r$ + Cohen's $\kappa$)
 * **Decision**: Evaluated the LLM-as-a-Judge against human ground truth using both continuous correlation (Pearson $r$) and discrete inter-rater agreement (Cohen's Kappa $\kappa$).
-* **Why**: Pearson $r$ measures linear correlation in continuous rating trends, while Cohen's $\kappa$ accounts for chance agreement on binary go/no-go decisions. Providing both proves mathematical calibration.
+* **Why**: Pearson $r$ measures linear correlation in continuous rating trends, while Cohen's $\kappa$ accounts for chance agreement on binary go/no-go decisions. Reporting both gives a fuller picture of agreement. Neither is meaningful on the current 5-item calibration set or with the mock judge; a real check needs 50+ borderline replies scored by two humans.
 * **Alternative Considered**: Simple percentage accuracy (rejected because it fails to correct for random chance agreement on skewed classes).
 
 ---

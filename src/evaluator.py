@@ -170,7 +170,7 @@ Evaluate this response according to the rubric and return the JSON object."""
         calibration_path: str = "data/calibration_sample.json"
     ) -> Dict[str, Any]:
         """
-        Evaluates the 30 paired test cases and computes Pearson Correlation (r)
+        Evaluates the paired human-scored test cases and computes Pearson Correlation (r)
         and Cohen's Kappa to prove that the LLM judge reliably agrees with a human.
         """
         if not os.path.exists(calibration_path):

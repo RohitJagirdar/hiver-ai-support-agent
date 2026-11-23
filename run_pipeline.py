@@ -72,8 +72,8 @@ def run_benchmark(mode: str, mock: bool = False):
         full_golden_set = json.load(f)
 
     if mode == "quick":
-        # Sample 20 balanced items for sub-minute evaluation
-        dataset = full_golden_set[:20]
+        # First 10 unique queries, for a fast smoke test
+        dataset = full_golden_set[:10]
         print(f"\n[MODE: QUICK] Running benchmark on {len(dataset)} representative golden samples...")
     else:
         dataset = full_golden_set
@@ -175,7 +175,7 @@ def run_calibration(mock: bool = False):
 def main():
     parser = argparse.ArgumentParser(description="Hiver AI Support Agent Pipeline Runner")
     parser.add_argument("--mode", choices=["quick", "full"], default="quick",
-                        help="Benchmark evaluation mode: 'quick' (20 samples, ~15s) or 'full' (180 samples)")
+                        help="Benchmark evaluation mode: 'quick' (first 10 queries) or 'full' (all 21 unique queries)")
     parser.add_argument("--test", type=str, default=None,
                         help="Interactive single-query evaluation mode: evaluate a single tweet string instantly")
     parser.add_argument("--calibrate", action="store_true",

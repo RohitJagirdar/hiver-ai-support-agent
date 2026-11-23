@@ -8,28 +8,29 @@ This directory contains the hand-labeled Golden Evaluation Set, calibration samp
 * **Primary Source**: ThoughtVector *Customer Support on Twitter* (Kaggle TWCS, ~3M multi-turn tweets).
 * **Brand Filter**: Filtered exclusively for initial customer inbound inquiries directed to `@AppleSupport` matched with verified outbound responses from the official brand account.
 * **Boilerplate Suppression**: Outbound replies were filtered via `src/data_extractor.py` to remove non-substantive DM redirections (`"Please send us a DM"`) unless accompanied by diagnostic troubleshooting instructions.
-* **Curated Knowledge Base**: Retained **1,998 high-signal, self-contained conversation pairs** stored in `data/processed/applesupport_pairs.csv` (~594 KB).
+* **Curated Knowledge Base**: Retained **1,998 rows (772 unique tweet/reply pairs)** stored in `data/processed/applesupport_pairs.csv` (~594 KB).
 
 ---
 
 ## 2. Golden Set Sampling Methodology (Deliverable 2)
-The Golden Set (`data/golden_set.json`) comprises **180 hand-labeled examples** curated specifically to stress-test real-world support failure modes rather than testing on a naive uniform distribution.
+The Golden Set (`data/golden_set.json`) comprises **21 hand-labeled queries** chosen to stress-test real support failure modes rather than drawn uniformly. (An earlier version repeated these 21 queries to reach 180 rows; the duplicates have been removed.)
 
 ### Stratified Distribution:
-1. **60% Standard Core Inquiries (108 samples)**:
+1. **Standard Core Inquiries (11 queries)**:
    - Typical hardware issues (force-restart sequences, battery service, DFU mode).
    - Software update stalls (iOS 17 recovery mode, caching issues).
    - Subscription and billing self-service (canceling Apple Music, refund portal guidance).
    - Device pairing and iCloud sync (AirPods resets, Low Power Mode sync pauses).
-2. **20% Edge / Ambiguous Cases (36 samples)**:
+2. **Edge / Ambiguous Cases (5 queries)**:
    - Sarcastic and colloquial phrasing (e.g., *"Thanks Apple for turning my $1300 phone into a paperweight lol"*).
    - Compound multi-intent inquiries spanning multiple departments (e.g., Hardware failure + billing dispute).
    - Missing symptoms or vague frustration (e.g., *"My phone is broken again like usual"*).
-3. **20% High-Risk & Escalation Triggers (36 samples)**:
+3. **High-Risk & Escalation Triggers (5 queries)**:
    - Physical and thermal hazards (swollen batteries, smoke, burning odors).
-   - Legal, regulatory, or litigation threats (subpoenas, lawyer involvement, CFPB filings).
-   - Inbound PII exposure (credit card numbers, plain-text credentials, phone numbers posted in public threads).
+   - Legal or litigation threats (lawyer involvement, court threats).
    - Account security breaches (unauthorized foreign logins, locked Apple IDs).
+
+Public PII exposure is not in the golden set; it is covered by the unit tests in `tests/test_vulnerability_and_ab.py`. Regulatory threats without legal keywords are not covered and are a known gap (see REPORT.md).
 
 ---
 
@@ -53,5 +54,5 @@ Each sample in `data/golden_set.json` adheres to the following typed schema:
 ---
 
 ## 4. Human-Judge Calibration Sample
-* `data/calibration_sample.json`: Contains **30 paired Human-vs-Judge ratings** scored across 4 criteria (Groundedness, Helpfulness, Brand Tone, Safety).
-* Run `python run_pipeline.py --calibrate` to verify mathematical alignment ($r = 0.9985$, $\kappa = 1.0$).
+* `data/calibration_sample.json`: Contains **5 human-scored replies** across 4 criteria (Groundedness, Helpfulness, Brand Tone, Safety).
+* Run `python run_pipeline.py --calibrate`. With 5 items, and with the mock judge, the resulting r and κ are not meaningful; see REPORT.md.
