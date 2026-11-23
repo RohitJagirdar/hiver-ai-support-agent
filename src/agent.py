@@ -48,9 +48,9 @@ logger = logging.getLogger(__name__)
 #
 # Each record contains:
 #   ts              – ISO-8601 timestamp
-#   query           – raw input (before sanitization)
+#   query           – input with PII redacted (raw PII is never written to disk)
 #   handled_by      – which layer short-circuited: "guardrail" | "rag+llm"
-#   pii_detected    – dict of PII type -> list of redacted spans
+#   pii_detected    – dict of PII type -> number of matches (counts only, no values)
 #   retrieved_refs  – list of {id, score, intent} for RAG precedents used
 #   output          – full AgentResolutionOutput as dict
 # =============================================================================
@@ -75,10 +75,10 @@ class QueryHistoryLogger:
         cls._ensure_dir()
         record = {
             "ts": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            "query": query,
+            "query": PIISanitizer.sanitize(query)[0],
             "handled_by": handled_by,
             "pii_detected": {
-                k: v for k, v in (pii_detected or {}).items() if v
+                k: len(v) for k, v in (pii_detected or {}).items() if v
             },
             "retrieved_refs": [
                 {

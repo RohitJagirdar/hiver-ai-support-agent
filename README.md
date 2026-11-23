@@ -1,17 +1,14 @@
 # Hiver AI Support Agent: Autonomous Twitter Support for @AppleSupport
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Reproducibility](https://img.shields.io/badge/Reproducibility-%3C%202%20Minutes-brightgreen.svg)]()
-[![Zero-Cost](https://img.shields.io/badge/Cost-%240.00%20(Free%20Tier)-success.svg)]()
 
 First-reply triage agent for **@AppleSupport** on Twitter: classifies the tweet's intent, retrieves similar past Apple Support replies, and either drafts a reply or escalates to a human. Built to escalate whenever there is legal, safety, security or privacy risk.
 
 ---
 
-##  2-Minute Quick Start (Reproduction Guarantee)
+##  Quick Start
 
-The entire pipeline, pre-cached vector embeddings, and golden evaluation dataset are self-contained. **No 800MB Kaggle downloads or paid API keys required.**
+The pipeline, pre-computed embeddings and golden set are all in the repo. **No Kaggle download or API key is needed**: without `GEMINI_API_KEY` the agent runs in mock mode. The first run downloads the MiniLM embedding model (~90 MB) from Hugging Face.
 
 ### 1. Clone & Initialize Environment
 ```bash
@@ -25,11 +22,11 @@ python -m venv .venv
 # On Linux/macOS:
 source .venv/bin/activate
 
-# Install lightweight dependencies (< 45 seconds)
+# Install dependencies (includes PyTorch via sentence-transformers, so the first install takes a few minutes)
 pip install -r requirements.txt
 ```
 
-### 2. Run Reproducible Headline Benchmarks
+### 2. Run the Benchmarks
 ```bash
 # A. Quick smoke test on the first 10 golden queries
 python run_pipeline.py --mode quick --mock
@@ -41,7 +38,8 @@ python run_pipeline.py --mode full --mock
 python run_pipeline.py --calibrate --mock
 ```
 
-### 3. Interactive Single-Query Testing
+### 3. Single-Query Testing
+Add `--mock` to force mock mode even when a key is set.
 ```bash
 # Test 1: Standard Hardware Issue (Auto-Handled with force-restart instructions)
 python run_pipeline.py --test "My iPhone 14 screen suddenly went black and won't turn on"
@@ -81,14 +79,17 @@ Baseline 1 uses no LLM, so it is the one independent comparison: it auto-handles
                                                │
                                                ▼
                               ┌──────────────────────────────────┐
-                              │    Pre-processing & Sanitizer    │
-                              │ (PII Redaction: Cards, Emails)   │
+                              │ Deterministic Guardrails (no LLM)│
+                              │ 1. Prompt injection patterns     │
+                              │ 2. PII (cards, emails, phones…)  │
+                              │ 3. Legal / safety / security kw  │
+                              │ 4. Apple-domain check            │
                               └────────────────┬─────────────────┘
                                                │
                                                ▼
                                   /───────────────────────\
-                                 <  Check Security Triggers? > ──[Yes: Legal/PII/Hacked]──► [ ESCALATE TO HUMAN ]
-                                  \───────────────────────/                                   (0ms / $0 cost)
+                                 <    Any check fired?     > ──[Yes]──► [ ESCALATE TO HUMAN ]
+                                  \───────────────────────/              (no LLM call, no cost)
                                                │ No
                                                ▼
                               ┌──────────────────────────────────┐
@@ -120,11 +121,16 @@ Baseline 1 uses no LLM, so it is the one independent comparison: it auto-handles
 ```
 hiver-ai-support-agent/
 ├── README.md                      # Headline reproduction & quickstart guide
-├── REPORT.md                      # Max 6-page comprehensive evaluation report
-├── DECISION_LOG.md                # 12 justified non-obvious engineering decisions
-├── requirements.txt               # Pinned dependencies
+├── REPORT.md                      # Evaluation report: results, failure analysis, limits
+├── DECISION_LOG.md                # 12 design decisions with trade-offs
+├── requirements.txt               # Dependencies
+├── Dockerfile                     # Container build
 ├── .env.example                   # Example environment configuration
 ├── run_pipeline.py                # Top-level CLI evaluation runner
+│
+├── scripts/
+│   ├── curate_dataset.py          # Builds the knowledge base from raw Kaggle data
+│   └── build_vector_cache.py      # Recomputes the MiniLM embeddings cache
 │
 ├── data/
 │   ├── processed/
@@ -137,7 +143,7 @@ hiver-ai-support-agent/
 │   ├── config.py                  # Schemas, prompts, guardrails, and extension points
 │   ├── security.py                # PII regex sanitization & prompt injection interceptor
 │   ├── retriever.py               # VectorStore (NumPy cosine similarity + FAISS bridge)
-│   ├── agent.py                   # Core 4-layer autonomous HiverSupportAgent
+│   ├── agent.py                   # 4-layer HiverSupportAgent (+ mock LLM, query log)
 │   ├── baselines.py               # Baseline 1 (Trivial) and Baseline 2 (Zero-shot)
 │   ├── evaluator.py               # Automated metrics + LLM-as-a-Judge calibration
 │   └── data_extractor.py          # Extraction script from raw Kaggle twcs.csv
@@ -148,12 +154,8 @@ hiver-ai-support-agent/
 │
 └── tests/
     ├── test_smoke.py              # Synchronous sanity unit tests
-    └── test_vulnerability_and_ab.py # Comprehensive PII & vulnerability A/B test suite
+    └── test_vulnerability_and_ab.py # PII, prompt-injection and safety tests
 ```
-
----
-
-
 
 ---
 

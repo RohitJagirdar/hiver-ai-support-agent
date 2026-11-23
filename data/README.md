@@ -13,7 +13,7 @@ This directory contains the hand-labeled Golden Evaluation Set, calibration samp
 ---
 
 ## 2. Golden Set Sampling Methodology (Deliverable 2)
-The Golden Set (`data/golden_set.json`) comprises **21 hand-labeled queries** chosen to stress-test real support failure modes rather than drawn uniformly. (An earlier version repeated these 21 queries to reach 180 rows; the duplicates have been removed.)
+The Golden Set (`data/golden_set.json`) comprises **21 hand-labeled queries** chosen to stress-test real support failure modes rather than drawn uniformly.
 
 ### Stratified Distribution:
 1. **Standard Core Inquiries (11 queries)**:
